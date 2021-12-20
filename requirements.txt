@@ -1,2 +1,5 @@
 nptyping==1.4.4
 numpy===1.21.3
+tqdm==4.62.3
+moviepy==1.0.3
+opencv-python==4.5.4.60
