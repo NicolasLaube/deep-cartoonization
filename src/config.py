@@ -1,7 +1,13 @@
+import os
 from src.dataset.utils import Movie
 
-FRAMES_FOLDER = "data/frames"
-CSV_FOLDER = "data/csv"
+ROOT_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
+
+FRAMES_FOLDER = os.path.join(ROOT_FOLDER, "data", "cartoon_frames")
+FRAMES_CSV = os.path.join(ROOT_FOLDER, "data", "cartoon_csv")
+
+PICTURES_FOLDER = os.path.join(ROOT_FOLDER, "data", "flickr", "Images")
+PICTURES_TXT = os.path.join(ROOT_FOLDER, "data" "flickr" "captions.txt")
 
 MOVIES = [
     Movie.BabyBoss,
@@ -16,3 +22,4 @@ MOVIES = [
     Movie.ToyStory4,
     Movie.Zootopia
 ]
+

@@ -15,7 +15,7 @@ from src.dataset.utils import Movie
 class CartoonDatasetLoader(Dataset):
     """Cartoon dataset loader class"""
   
-    def __init__(self, movies: List[Movie] = config.MOVIE) -> None:
+    def __init__(self, movies: List[Movie] = config.MOVIES) -> None:
         self.movies = movies
         self.frames = []
         self.__load_frames()
@@ -23,7 +23,7 @@ class CartoonDatasetLoader(Dataset):
     def __load_frames(self) -> None:
         """Loads the list of frames"""
         for movie in self.movies:
-            with open(os.path.join(config.CSV_FOLDER, \
+            with open(os.path.join(config.FRAMES_CSV, \
                 movie.value + ".csv"), "r", encoding="utf-8") as csv_f:
                 reader = csv.reader(csv_f)
                 for frame_path in reader:
@@ -41,3 +41,8 @@ class CartoonDatasetLoader(Dataset):
     def __getitem__(self, index: int) -> NDArray[(Any, Any), np.int32]:
         """Get an item"""
         return cv2.imread(os.path.join(config.FRAMES_FOLDER, self.frames[index]))
+
+
+if __name__ == "__main__":
+    loader = CartoonDatasetLoader()
+    print(loader[0])
