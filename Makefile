@@ -2,7 +2,7 @@ install:
 		pip install -r requirements.txt
 
 install-cpu:
-		pip install torch==1.9.3
+		pip install torch==1.9.1
 
 install-gpu:
 		pip install torch==1.9.1+cu102  -f https://download.pytorch.org/whl/cu102/torch_stable.html
