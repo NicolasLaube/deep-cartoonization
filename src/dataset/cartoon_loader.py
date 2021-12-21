@@ -13,6 +13,7 @@ from src.dataset.utils import Movie
 
 
 class CartoonDatasetLoader(Dataset):
+    """Cartoon dataset loader class"""
   
     def __init__(self, movies: List[Movie] = config.MOVIE) -> None:
         self.movies = movies
