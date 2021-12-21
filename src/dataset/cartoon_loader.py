@@ -1,7 +1,7 @@
+"""Cartoon dataset Loader"""
 import os
 import csv
 from typing import List, Any
-from enum import Enum
 import numpy as np
 from nptyping import NDArray
 from torch.utils.data import Dataset
@@ -9,31 +9,17 @@ import cv2
 
 
 from src import config
-
-
-class Movie(Enum):
-    """All movies"""
-    Soul = "Soul"
-    Cars3 = "Cars3"
-    BabyBoss = "BabyBoss"
-    Coco = "Coco"
-    InsideOut = "InsideOut"
-    Luca = "Luca"
-    Onward = "Onward"
-    TheIncredibles = "TheIncredibles"
-    TheSecretLifeOfPets = "TheSecretLifeOfPets"
-    ToyStory4 = "ToyStory4"
-    Zootopia = "Zootopia"
+from src.dataset.utils import Movie
 
 
 class CartoonDatasetLoader(Dataset):
   
-    def __init__(self, movies: List[Movie]) -> None:
+    def __init__(self, movies: List[Movie] = config.MOVIE) -> None:
         self.movies = movies
         self.frames = []
         self.__load_frames()
 
-    def __load_frames(self):
+    def __load_frames(self) -> None:
         """Loads the list of frames"""
         for movie in self.movies:
             with open(os.path.join(config.CSV_FOLDER, \
@@ -47,7 +33,7 @@ class CartoonDatasetLoader(Dataset):
                         )
                     ) 
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Length"""
         return len(self.frames)
 
