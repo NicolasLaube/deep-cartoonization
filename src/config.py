@@ -23,3 +23,6 @@ MOVIES = [
     Movie.Zootopia
 ]
 
+VGG_WEIGHTS = os.path.join(ROOT_FOLDER, "weights", "pretrained", "vgg19.pth")
+INPUT_CHANNELS = 3
+OUTPUT_CHANNELS = 3

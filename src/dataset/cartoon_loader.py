@@ -41,8 +41,3 @@ class CartoonDatasetLoader(Dataset):
     def __getitem__(self, index: int) -> NDArray[(Any, Any), np.int32]:
         """Get an item"""
         return cv2.imread(os.path.join(config.FRAMES_FOLDER, self.frames[index]))
-
-
-if __name__ == "__main__":
-    loader = CartoonDatasetLoader()
-    print(loader[0])
