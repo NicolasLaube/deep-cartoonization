@@ -1,6 +1,10 @@
 import os
 from src.dataset.utils import Movie
 
+#####################
+### About folders ###
+#####################
+
 ROOT_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
 
 DATA_FOLDER = os.path.join(ROOT_FOLDER, "data")
@@ -20,6 +24,10 @@ IMAGES_ALL_CSV = os.path.join(DATA_FOLDER, "images_all.csv")
 IMAGES_TRAIN_CSV = os.path.join(DATA_FOLDER, "images_train.csv")
 IMAGES_TEST_CSV = os.path.join(DATA_FOLDER, "images_test.csv")
 
+####################
+### About movies ###
+####################
+
 MOVIES = [
     Movie.BabyBoss,
     Movie.Cars3,
@@ -33,6 +41,10 @@ MOVIES = [
     Movie.ToyStory4,
     Movie.Zootopia,
 ]
+
+#######################
+### Training params ###
+#######################
 
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
