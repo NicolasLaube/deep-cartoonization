@@ -31,6 +31,8 @@ MOVIES = [
     Movie.TheIncredibles,
     Movie.TheSecretLifeOfPets,
     Movie.ToyStory4,
-    Movie.Zootopia
+    Movie.Zootopia,
 ]
 
+TEST_SIZE = 0.2
+RANDOM_STATE = 42
