@@ -1,46 +1,32 @@
 """Cartoon dataset Loader"""
-import os
-import csv
-from typing import List, Any
-import numpy as np
-from nptyping import NDArray
-from torch.utils.data import Dataset
-import cv2
+from typing import List
 
 
 from src import config
+from src.dataset.image_loader import ImageLoader
 from src.dataset.utils import Movie
 
 
-class CartoonDatasetLoader(Dataset):
+class CartoonDatasetLoader(ImageLoader):
     """Cartoon dataset loader class"""
-  
-    def __init__(self, movies: List[Movie] = config.MOVIES) -> None:
+
+    def __init__(
+        self, train: bool = True, movies: List[Movie] = config.MOVIES, **kwargs
+    ) -> None:
         self.movies = movies
-        self.frames = []
-        self.__load_frames()
+        self.train = train
+        if train:
+            csv_path = config.FRAMES_TRAIN_CSV
+        else:
+            csv_path = config.FRAMES_TEST_CSV
+        ImageLoader.__init__(self, csv_path, **kwargs)
+        self._load_specific_frames()
 
-    def __load_frames(self) -> None:
-        """Loads the list of frames"""
-        for movie in self.movies:
-            with open(os.path.join(config.FRAMES_CSV, \
-                movie.value + ".csv"), "r", encoding="utf-8") as csv_f:
-                reader = csv.reader(csv_f)
-                for frame_path in reader:
-                    self.frames.append(
-                        os.path.join(
-                            movie.value, 
-                            frame_path[0]
-                        )
-                    ) 
-
-    def __len__(self) -> int:
-        """Length"""
-        return len(self.frames)
-
-    def __getitem__(self, index: int) -> NDArray[(Any, Any), np.int32]:
-        """Get an item"""
-        return cv2.imread(os.path.join(config.FRAMES_FOLDER, self.frames[index]))
+    def _load_specific_frames(self) -> None:
+        """Loads the correct list of frames"""
+        self.df_images = self.df_images[
+            self.df_images["movie"].isin([movie.name for movie in self.movies])
+        ]
 
 
 if __name__ == "__main__":
