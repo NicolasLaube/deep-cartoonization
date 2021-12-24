@@ -6,7 +6,8 @@ import torch.optim as optim
 from time import time
 import logging
 import torch.nn as nn
-from torch.optim.optimizer import Optimizer
+from torch.utils.data import DataLoader
+
 
 import src.models.networks as networks
 from src.models.networks.generator import Generator
@@ -65,65 +66,66 @@ class CartoonGan():
         self.discriminator.train()
         # vgg19 isn't trained
         self.vgg19.eval()
-    
-    def __set_eval_mode(self):
-        pass
 
     def pretrain(self,
         *,
-        picture_data: PicturesDatasetLoader, 
+        pictures_loader: DataLoader, 
         parameters: CartoonGanParameters
         ) -> None:
-        """Pretrain model"""
+        """Pretrains model"""
         self.__load_optimizers(parameters)
         self.__set_train_mode()
 
-        L1_loss = nn.L1_loss().to(self.device)
+        l1_loss = nn.L1_loss().to(self.device)
 
         for epoch in range(parameters.epochs):
             epoch_start_time = time.time()
-            Recon_losses = []
-            for x in picture_data:
-                x = x.to(self.device)
+            reconstruction_losses = []
+            for picture_batch in pictures_loader:
+                picture_batch = picture_batch.to(self.device)
+                self.gen_optimizer.zero_grad()
 
-                # train generator G
-                parameters.generator_optimizer.zero_grad()
+                fake_cartoon = self.generator(picture_batch)
 
-                x_feature = self.vgg19((x + 1) / 2)
-                generator_ = self.generator(x)
-                generator_feature = self.vgg19((generator_ + 1) / 2)
+                picture_features = self.vgg19((picture_batch + 1) / 2)
+                fake_features = self.vgg19((fake_cartoon + 1) / 2)
 
-                Recon_loss = 10 * L1_loss(generator_feature, x_feature.detach())
-                Recon_losses.append(Recon_loss.item())
+                # image reconstruction with only L1 loss function
+                reconstruction_loss = 10 * l1_loss(fake_features, picture_features.detach())
+                reconstruction_losses.append(reconstruction_loss.item())
 
-                Recon_loss.backward()
-                parameters.generator_optimizer.step()
+                reconstruction_loss.backward()
+                self.gen_optimizer.step()
 
             per_epoch_time = time.time() - epoch_start_time
 
             logging.info(
                 '[%d/%d] - time: %.2f, Recon loss: %.3f' % ((epoch + 1), 
                 parameters.epochs, 
-                per_epoch_time, 
-                torch.mean(torch.FloatTensor(Recon_losses)))
+                per_epoch_time,
+                torch.mean(torch.FloatTensor(reconstruction_losses)))
             )
 
 
-    def train(self, 
-        cartoon_data: CartoonDatasetLoader, 
-        picture_data: PicturesDatasetLoader, 
+    def train(self,
+        *,
+        cartoon_loader: DataLoader, 
+        picture_loader: DataLoader, 
         parameters: CartoonGanParameters
         ) -> None:
         """Train function"""
+        assert len(cartoon_loader) == len(picture_loader), "Lengths should be identical"
+        
         self.__load_optimizers(parameters)
+        self.__set_train_mode()
 
-        L1_loss = nn.L1_loss().to(self.device)
-        BCE_loss = nn.BCELoss().to(self.device)
+        l1_loss = nn.L1_loss().to(self.device)
+        bce_loss = nn.BCELoss().to(self.device)
 
         self.vgg19.eval()
 
-        real = torch.ones(parameters.batch_size, 1, parameters.input_size // 4, parameters.input_size // 4).to(self.device)
-        fake = torch.zeros(parameters.batch_size, 1, parameters.input_size // 4, parameters.input_size // 4).to(self.device)
+        real = torch.ones(cartoon_loader.batch_size, 1, parameters.input_size // 4, parameters.input_size // 4).to(self.device)
+        fake = torch.zeros(cartoon_loader.batch_size, 1, parameters.input_size // 4, parameters.input_size // 4).to(self.device)
 
         for epoch in range(parameters.epochs):
             epoch_start_time = time.time()
@@ -134,40 +136,43 @@ class CartoonGan():
             disc_losses = []
             gen_losses = []
             conditional_losses = []
-            for picture, cartoon in zip(picture_data, cartoon_data):
-                e = cartoon[:, :, :, parameters.input_size:]
-                cartoon = cartoon[:, :, :, : parameters.input_size]
-                picture, cartoon, e = picture.to(self.device), cartoon.to(self.device), e.to(self.device)
+            for picture_batch, cartoon_batch in zip(picture_loader, cartoon_loader):
+
+                # e = cartoon_batch[:, :, :, parameters.input_size:]
+                cartoon_batch = cartoon_batch[:, :, :, : parameters.input_size]
+                picture_batch = picture_batch.to(self.device)
+                cartoon_batch = cartoon_batch.to(self.device)
+                # e = e.to(self.device)
 
                 # Discriminator training
-                parameters.discriminator_optimizer.zero_grad()
+                self.disc_optimizer.zero_grad()
 
-                disc_real_cartoon = self.discriminator(cartoon)
-                disc_real_cartoon_loss = BCE_loss(disc_real_cartoon, real)
+                disc_real_cartoons = self.discriminator(cartoon_batch)
+                disc_real_cartoon_loss = bce_loss(disc_real_cartoons, real)
 
-                gen_cartoon = self.generator(picture)
-                disc_fake_cartoon = self.discriminator(gen_cartoon)
-                disc_fake_cartoon_loss = BCE_loss(disc_fake_cartoon, fake)
+                gen_cartoons = self.generator(picture_batch)
+                disc_fake_cartoons = self.discriminator(gen_cartoons)
+                disc_fake_cartoon_loss = bce_loss(disc_fake_cartoons, fake)
 
-                D_edge = self.discriminator(e)
-                disc_edged_cartoon_loss = BCE_loss(D_edge, fake)
+                # D_edge = self.discriminator(e)
+                # disc_edged_cartoon_loss = bce_loss(D_edge, fake)
 
-                disc_loss = disc_fake_cartoon_loss + disc_real_cartoon_loss + disc_edged_cartoon_loss
+                disc_loss = disc_fake_cartoon_loss + disc_real_cartoon_loss # + disc_edged_cartoon_loss
                 disc_losses.append(disc_loss.item())
 
                 disc_loss.backward()
-                parameters.discriminator_optimizer.step()
+                self.disc_optimizer.step()
 
                 # Generator training
-                parameters.generator_optimizer.zero_grad()
+                self.gen_optimizer.zero_grad()
 
-                generated_image = self.generator(cartoon)
+                generated_image = self.generator(cartoon_batch)
                 disc_fake = self.discriminator(generated_image)
-                disc_fake_loss = BCE_loss(disc_fake, real)
+                disc_fake_loss = bce_loss(disc_fake, real)
 
-                picture_feature = self.vgg19((picture + 1) / 2)
-                cartoon_feature = self.vgg19((generated_image + 1) / 2)
-                conditionnal_loss = parameters.conditional_lambda * L1_loss(cartoon_feature, picture_feature.detach())
+                picture_features = self.vgg19((picture_batch + 1) / 2)
+                cartoon_features = self.vgg19((generated_image + 1) / 2)
+                conditionnal_loss = parameters.conditional_lambda * l1_loss(cartoon_features, picture_features.detach())
 
                 gen_loss = disc_fake_loss + conditionnal_loss
                 gen_losses.append(disc_fake_loss.item())
@@ -175,11 +180,10 @@ class CartoonGan():
                 conditional_losses.append(conditionnal_loss.item())
 
                 gen_loss.backward()
-                parameters.generator_optimizer.step()
-
+                self.gen_optimizer.step()
 
             per_epoch_time = time.time() - epoch_start_time
-            # train_hist['per_epoch_time'].append(per_epoch_time)
+
             logging.info('[%d/%d] - time: %.2f, Disc loss: %.3f, Gen loss: %.3f, Con loss: %.3f' % 
                 ((epoch + 1), 
                 parameters.epochs, 
@@ -187,27 +191,7 @@ class CartoonGan():
                 torch.mean(torch.FloatTensor(disc_losses)),
                 torch.mean(torch.FloatTensor(gen_losses)), 
                 torch.mean(torch.FloatTensor(conditional_losses))
-            ))        
-
-    """def validate(self, train_pictures: PicturesDatasetLoader, test_pictures: PicturesDatasetLoader) -> None:
-        with torch.no_grad():
-            self.generator.eval()
-            for n, (x, _) in enumerate(train_pictures):
-                x = x.to(self.device)
-                G_recon = self.generator(x)
-                result = torch.cat((x[0], G_recon[0]), 2)
-                path = os.path.join(args.name + '_results', 'Transfer', str(epochs+1) + '_epoch_' + args.name + '_train_' + str(n + 1) + '.png')
-                plt.imsave(path, (result.cpu().numpy().transpose(1, 2, 0) + 1) / 2)
-                if n == 4:
-                    break
-
-            for picture in enumerate(test_pictures):
-                picture = picture.to(self.device)
-                G_recon = self.generator(x)
-                result = torch.cat((x[0], G_recon[0]), 2)
-                path = os.path.join(args.name + '_results', 'Transfer', str(epoch+1) + '_epoch_' + args.name + '_test_' + str(n + 1) + '.png')
-                plt.imsave(path, (result.cpu().numpy().transpose(1, 2, 0) + 1) / 2)           
-    """
+            ))
 
     def save_model(self, generator_path: str, discriminator_path: str) -> None:
         """Save a model"""
@@ -222,7 +206,7 @@ class CartoonGan():
     def __repr__(self) -> str:
         """Prints the model's architecture"""
         return f"""-------- Networks ------- \n
-        {networks.print_network(generator)}\n
-        {networks.print_network(discriminator)}\n
-        {networks.print_network(vgg19)}     
+        {networks.print_network(self.generator)}\n
+        {networks.print_network(self.discriminator)}\n
+        {networks.print_network(self.vgg19)}     
         """

@@ -1,5 +1,5 @@
 """Generic Image Loader"""
-from typing import Any, Text
+from typing import Any, Tuple
 import numpy as np
 from nptyping import NDArray
 from torch.utils.data import Dataset
@@ -15,16 +15,11 @@ class ImageLoader(Dataset):
     def __init__(
         self,
         csv_path: str,
-        new_size: tuple[int, int] = (256, 256),
+        transform: callable
     ) -> None:
-        self.csv_path = csv_path
-        self.df_images = None
-        self.new_size = new_size
-        self._load_images()
-
-    def _load_images(self) -> None:
-        """Loads the list of images"""
-        self.df_images = pd.read_csv(self.csv_path, index_col=0)
+        self.df_images = pd.read_csv(csv_path, index_col=0)
+        self.__load_images()
+        self.transform = transform
 
     def __len__(self) -> int:
         """Length"""
@@ -32,13 +27,4 @@ class ImageLoader(Dataset):
 
     def __getitem__(self, index: int) -> NDArray[(Any, Any), np.int32]:
         """Get an item"""
-        image = cv2.imread(self.df_images["path"][index])
-        return self._transform(image)
-
-    def _transform(
-        self,
-        image: NDArray[(Any, Any), np.int32],
-    ) -> NDArray[(Any, Any), np.int32]:
-        """To transform the image"""
-        image = resize.resize(image, self.new_size)
-        return image
+        return self.transform(cv2.imread(self.df_images["path"][index]))
