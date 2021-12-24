@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-from src.networks.utils import initialize_weights
+from src.models.networks.utils import initialize_weights
 
 
 class ResnetBlock(nn.Module):

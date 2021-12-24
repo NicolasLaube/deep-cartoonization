@@ -36,8 +36,3 @@ def create_train_test_images():
     test = test.reset_index(drop=True)
     train.to_csv(config.IMAGES_TRAIN_CSV)
     test.to_csv(config.IMAGES_TEST_CSV)
-
-
-if __name__ == "__main__":
-    create_train_test_frames()
-    create_train_test_images()

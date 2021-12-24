@@ -25,6 +25,8 @@ IMAGES_FILTERED_CSV = os.path.join(DATA_FOLDER, "images_all.csv")
 IMAGES_TRAIN_CSV = os.path.join(DATA_FOLDER, "images_train.csv")
 IMAGES_TEST_CSV = os.path.join(DATA_FOLDER, "images_test.csv")
 
+
+WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "weights")
 ####################
 ### About movies ###
 ####################

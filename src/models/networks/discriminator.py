@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from src.networks.utils import initialize_weights
+from src.models.networks.utils import initialize_weights
 
 
 class Discriminator(nn.Module):

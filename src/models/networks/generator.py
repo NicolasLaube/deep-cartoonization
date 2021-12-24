@@ -1,8 +1,8 @@
 import torch.nn as nn
 
 
-from src.networks.resnet_block import ResnetBlock
-from src.networks.utils import initialize_weights
+from src.models.networks.resnet_block import ResnetBlock
+from src.models.networks.utils import initialize_weights
 
 
 class Generator(nn.Module):

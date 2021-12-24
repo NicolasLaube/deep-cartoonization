@@ -1,4 +1,6 @@
+import os
 from typing import Any, List, Optional
+import pickle
 import numpy as np
 from nptyping import NDArray
 import torch
@@ -8,20 +10,18 @@ import logging
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-
+from src import config
 import src.models.networks as networks
 from src.models.networks.generator import Generator
 from src.models.networks.discriminator import Discriminator
-from src.dataset.dataset_cartoon import CartoonDatasetLoader
-from src.dataset.dataset_pictures import PicturesDatasetLoader
 from src.models.parameters import CartoonGanParameters
 from src.models.networks.vgg19 import VGG19
 
 
 class CartoonGan():
     def __init__(self) -> None:
-        self.generator = Generator()
-        self.discriminator = Discriminator()
+        self.generator = Generator(3, 3)
+        self.discriminator = Discriminator(3, 1)
         self.vgg19 = VGG19()
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -34,9 +34,6 @@ class CartoonGan():
         self.disc_optimizer: Optional[optim.Optimizer] = None
         self.gen_scheduler: Optional[optim.Optimizer] = None
         self.disc_scheduler: Optional[optim.Optimizer] = None
-
-    def load_weights(self, pretrain_path: str = None, train_path: str = None) -> None:
-        pass
 
     def __load_optimizers(self, parameters: CartoonGanParameters):
         self.gen_optimizer = optim.Adam(
@@ -76,10 +73,10 @@ class CartoonGan():
         self.__load_optimizers(parameters)
         self.__set_train_mode()
 
-        l1_loss = nn.L1_loss().to(self.device)
+        l1_loss = nn.L1Loss().to(self.device)
 
         for epoch in range(parameters.epochs):
-            epoch_start_time = time.time()
+            epoch_start_time = time()
             reconstruction_losses = []
             for picture_batch in pictures_loader:
                 picture_batch = picture_batch.to(self.device)
@@ -97,7 +94,7 @@ class CartoonGan():
                 reconstruction_loss.backward()
                 self.gen_optimizer.step()
 
-            per_epoch_time = time.time() - epoch_start_time
+            per_epoch_time = time() - epoch_start_time
 
             logging.info(
                 '[%d/%d] - time: %.2f, Recon loss: %.3f' % ((epoch + 1), 
@@ -105,6 +102,8 @@ class CartoonGan():
                 per_epoch_time,
                 torch.mean(torch.FloatTensor(reconstruction_losses)))
             )
+
+            self.save_model(os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), os.path.join(config.WEIGHTS_FOLDER, f"pretrained_disc_{epoch}.pkl"))
 
 
     def train(self,
@@ -119,7 +118,7 @@ class CartoonGan():
         self.__load_optimizers(parameters)
         self.__set_train_mode()
 
-        l1_loss = nn.L1_loss().to(self.device)
+        l1_loss = nn.L1Loss().to(self.device)
         bce_loss = nn.BCELoss().to(self.device)
 
         self.vgg19.eval()
@@ -128,7 +127,7 @@ class CartoonGan():
         fake = torch.zeros(cartoon_loader.batch_size, 1, parameters.input_size // 4, parameters.input_size // 4).to(self.device)
 
         for epoch in range(parameters.epochs):
-            epoch_start_time = time.time()
+            epoch_start_time = time()
             self.generator.train()
 
             parameters.generator_scheduler.step()
@@ -182,7 +181,7 @@ class CartoonGan():
                 gen_loss.backward()
                 self.gen_optimizer.step()
 
-            per_epoch_time = time.time() - epoch_start_time
+            per_epoch_time = time() - epoch_start_time
 
             logging.info('[%d/%d] - time: %.2f, Disc loss: %.3f, Gen loss: %.3f, Con loss: %.3f' % 
                 ((epoch + 1), 
