@@ -3,7 +3,7 @@ from typing import List
 
 
 from src import config
-from src.dataset.image_loader import ImageLoader
+from src.dataset.loader import ImageLoader
 from src.dataset.utils import Movie
 
 
@@ -14,12 +14,8 @@ class CartoonDatasetLoader(ImageLoader):
         self, train: bool = True, movies: List[Movie] = config.MOVIES, **kwargs
     ) -> None:
         self.movies = movies
-        if train:
-            csv_path = config.FRAMES_TRAIN_CSV
-        else:
-            csv_path = config.FRAMES_TEST_CSV
-        ImageLoader.__init__(self, csv_path, **kwargs)
         self.__load_specific_frames()
+        ImageLoader.__init__(self, config.FRAMES_TRAIN_CSV if train else config.FRAMES_TEST_CSV, **kwargs)
 
     def __load_specific_frames(self) -> None:
         """Loads the correct list of frames"""

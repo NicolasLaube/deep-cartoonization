@@ -12,8 +12,8 @@ from torch.utils.data import DataLoader
 import src.models.networks as networks
 from src.models.networks.generator import Generator
 from src.models.networks.discriminator import Discriminator
-from src.dataset.cartoon_loader import CartoonDatasetLoader
-from src.dataset.pictures_loader import PicturesDatasetLoader
+from src.dataset.dataset_cartoon import CartoonDatasetLoader
+from src.dataset.dataset_pictures import PicturesDatasetLoader
 from src.models.parameters import CartoonGanParameters
 from src.models.networks.vgg19 import VGG19
 

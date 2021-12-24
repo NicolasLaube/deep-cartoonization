@@ -2,8 +2,8 @@ from typing import Optional
 from torch.optim import Optimizer
 from dataclasses import dataclass
 
-
-class CartoonGanParameters(dataclass):
+@dataclass
+class CartoonGanParameters():
     gen_lr: float
     disc_lr: float
 

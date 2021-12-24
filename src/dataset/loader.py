@@ -6,9 +6,6 @@ from torch.utils.data import Dataset
 import cv2
 import pandas as pd
 
-from src.dataset.transformations import resize
-
-
 class ImageLoader(Dataset):
     """Generic image loader class"""
 
