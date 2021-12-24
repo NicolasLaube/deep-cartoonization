@@ -15,5 +15,7 @@ old/
 tmp/
 to_delete/
 
-data/
-weights/
+data/*
+!data/.gitkeep
+weights/*
+!weights/.gitkeep
