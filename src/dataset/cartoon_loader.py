@@ -1,22 +1,20 @@
 """Cartoon dataset Loader"""
-import os
-import csv
-from typing import List, Any
-import numpy as np
-from nptyping import NDArray
-from torch.utils.data import Dataset
-import cv2
+from typing import List
 
 
 from src import config
+from src.dataset.image_loader import ImageLoader
 from src.dataset.utils import Movie
 
 
-class CartoonDatasetLoader(Dataset):
+class CartoonDatasetLoader(ImageLoader):
     """Cartoon dataset loader class"""
-  
-    def __init__(self, movies: List[Movie] = config.MOVIES) -> None:
+
+    def __init__(
+        self, train: bool = True, movies: List[Movie] = config.MOVIES, **kwargs
+    ) -> None:
         self.movies = movies
+<<<<<<< HEAD
         self.frames = []
         self.__load_frames()
 
@@ -41,3 +39,23 @@ class CartoonDatasetLoader(Dataset):
     def __getitem__(self, index: int) -> NDArray[(Any, Any), np.int32]:
         """Get an item"""
         return cv2.imread(os.path.join(config.FRAMES_FOLDER, self.frames[index]))
+=======
+        self.train = train
+        if train:
+            csv_path = config.FRAMES_TRAIN_CSV
+        else:
+            csv_path = config.FRAMES_TEST_CSV
+        ImageLoader.__init__(self, csv_path, **kwargs)
+        self._load_specific_frames()
+
+    def _load_specific_frames(self) -> None:
+        """Loads the correct list of frames"""
+        self.df_images = self.df_images[
+            self.df_images["movie"].isin([movie.name for movie in self.movies])
+        ]
+
+
+if __name__ == "__main__":
+    loader = CartoonDatasetLoader()
+    print(loader[0])
+>>>>>>> 1206f5c3419080c7f6dbc860097cc0b7b81ee875

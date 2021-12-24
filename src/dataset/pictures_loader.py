@@ -1,40 +1,16 @@
-
-
 """Flickr pictures dataset Loader"""
-import os
-from typing import Any
-import numpy as np
-from nptyping import NDArray
-from torch.utils.data import Dataset
-import cv2
-
 
 from src import config
+from src.dataset.image_loader import ImageLoader
 
 
-class PicturesDatasetLoader(Dataset):
+class PicturesDatasetLoader(ImageLoader):
     """Cartoon dataset loader class"""
-  
-    def __init__(self) -> None:
-        self.pictures = []
-        self.__load_pictures()
 
-    def __load_pictures(self) -> None:
-        """Loads the list of frames"""
-        with open(config.PICTURES_TXT) as pictures_txt:
-            lines = pictures_txt.readlines()
-            for line in lines:
-                picture_name = line.split(",")[0]
-                if ".jpg" in picture_name:
-                    self.pictures.append(os.path.join(
-                        config.PICTURES_FOLDER,
-                        picture_name
-                    ))
-
-    def __len__(self) -> int:
-        """Length"""
-        return len(self.frames)
-
-    def __getitem__(self, index: int) -> NDArray[(Any, Any), np.int32]:
-        """Get an item"""
-        return cv2.imread(self.pictures[index])
+    def __init__(self, train: bool = True, **kwargs) -> None:
+        self.train = train
+        if train:
+            csv_path = config.IMAGES_TRAIN_CSV
+        else:
+            csv_path = config.IMAGES_TEST_CSV
+        ImageLoader.__init__(self, csv_path, **kwargs)
