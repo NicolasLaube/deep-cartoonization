@@ -13,6 +13,15 @@ class PicturesDataset(ImageLoader):
 
 
 if __name__ == "__main__":
-    dd = PicturesDataset()
+    from src.preprocessing.preprocessor import Preprocessor
 
-    print(len(dd))
+    p = Preprocessor(size=256)
+
+
+
+    dd = PicturesDataset(
+        train=True,
+        transform=p.picture_preprocessor()
+    )
+
+    print(dd[0])

@@ -18,6 +18,7 @@ class Preprocessor:
     def picture_preprocessor(self) -> NDArray[(3, Any, Any), np.int32]:
         """Preprocess pictures"""
         return transforms.Compose([
+            transforms.ToPILImage(),
             transforms.Resize((self.size, self.size)),
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))

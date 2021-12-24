@@ -28,6 +28,11 @@ class CartoonDataset(ImageLoader):
 
 
 if __name__ == "__main__":
-    dd = CartoonDataset(train=True)
+    from src.preprocessing.preprocessor import Preprocessor
 
-    print(len(dd))
+    p = Preprocessor(size=256)
+
+    dd = CartoonDataset(
+        train=True,
+        transform=p.cartoon_preprocessor()
+    )

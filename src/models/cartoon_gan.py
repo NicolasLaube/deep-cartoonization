@@ -103,7 +103,10 @@ class CartoonGan():
                 torch.mean(torch.FloatTensor(reconstruction_losses)))
             )
 
-            self.save_model(os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), os.path.join(config.WEIGHTS_FOLDER, f"pretrained_disc_{epoch}.pkl"))
+        self.save_model(
+            os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), 
+            os.path.join(config.WEIGHTS_FOLDER, f"pretrained_disc_{epoch}.pkl")
+        )
 
 
     def train(self,
