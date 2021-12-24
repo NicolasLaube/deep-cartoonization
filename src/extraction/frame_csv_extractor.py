@@ -20,7 +20,7 @@ def create_all_frames_csv():
     """Creates csv for each movie in the frames folder."""
     for movie in os.listdir(config.FRAMES_FOLDER):
         folder_path = os.path.join(config.FRAMES_FOLDER, movie)
-        csv_path = os.path.join(config.CSV_FOLDER, movie + ".csv")
+        csv_path = os.path.join(config.FRAMES_CSV, movie + ".csv")
         create_frames_csv(folder_path, csv_path)
 
 

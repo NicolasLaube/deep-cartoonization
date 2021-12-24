@@ -17,10 +17,12 @@ PICTURES_FOLDER = os.path.join(FLICKR_FOLDER, "Images")
 PICTURES_TXT = os.path.join(FLICKR_FOLDER, "captions.txt")
 
 FRAMES_ALL_CSV = os.path.join(DATA_FOLDER, "frames_all.csv")
+FRAMES_FILTERED_CSV = os.path.join(DATA_FOLDER, "frames_all.csv")
 FRAMES_TRAIN_CSV = os.path.join(DATA_FOLDER, "frames_train.csv")
 FRAMES_TEST_CSV = os.path.join(DATA_FOLDER, "frames_test.csv")
 
 IMAGES_ALL_CSV = os.path.join(DATA_FOLDER, "images_all.csv")
+IMAGES_FILTERED_CSV = os.path.join(DATA_FOLDER, "images_all.csv")
 IMAGES_TRAIN_CSV = os.path.join(DATA_FOLDER, "images_train.csv")
 IMAGES_TEST_CSV = os.path.join(DATA_FOLDER, "images_test.csv")
 
@@ -29,17 +31,17 @@ IMAGES_TEST_CSV = os.path.join(DATA_FOLDER, "images_test.csv")
 ####################
 
 MOVIES = [
-    Movie.BabyBoss,
-    Movie.Cars3,
-    Movie.Coco,
-    Movie.InsideOut,
-    Movie.Luca,
-    Movie.Onward,
-    Movie.Soul,
-    Movie.TheIncredibles,
-    Movie.TheSecretLifeOfPets,
-    Movie.ToyStory4,
-    Movie.Zootopia,
+    Movie.BabyBoss.name,
+    Movie.Cars3.name,
+    Movie.Coco.name,
+    Movie.InsideOut.name,
+    Movie.Luca.name,
+    Movie.Onward.name,
+    Movie.Soul.name,
+    Movie.TheIncredibles.name,
+    Movie.TheSecretLifeOfPets.name,
+    Movie.ToyStory4.name,
+    Movie.Zootopia.name,
 ]
 
 #######################

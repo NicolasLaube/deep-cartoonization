@@ -7,7 +7,7 @@ def create_train_test_frames():
     """
     Create and save a train and a test file for frames
     """
-    df_frames = pd.read_csv(config.FRAMES_ALL_CSV, index_col=0)
+    df_frames = pd.read_csv(config.FRAMES_FILTERED_CSV, index_col=0)
     train, test = train_test_split(
         df_frames,
         test_size=config.TEST_SIZE,
@@ -25,7 +25,7 @@ def create_train_test_images():
     """
     Create and save a train and a test file for images
     """
-    df_images = pd.read_csv(config.IMAGES_ALL_CSV, index_col=0)
+    df_images = pd.read_csv(config.IMAGES_FILTERED_CSV, index_col=0)
     train, test = train_test_split(
         df_images,
         test_size=config.TEST_SIZE,
