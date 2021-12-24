@@ -15,7 +15,11 @@ old/
 tmp/
 to_delete/
 
-data/*
-!data/.gitkeep
+data/cartoon_csv/*
+!data/cartoon_csv/.gitkeep
+data/cartoon_frames/*
+!data/cartoon_frames/.gitkeep
+data/flickr/*
+!data/flickr/.gitkeep
 weights/*
 !weights/.gitkeep
