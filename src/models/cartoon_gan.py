@@ -9,6 +9,7 @@ from time import time
 import logging
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from src import config
 import src.models.networks as networks
@@ -19,10 +20,30 @@ from src.models.networks.vgg19 import VGG19
 
 
 class CartoonGan():
-    def __init__(self) -> None:
-        self.generator = Generator(3, 3)
-        self.discriminator = Discriminator(3, 1)
-        self.vgg19 = VGG19()
+    def __init__(self, 
+    nb_resnet_blocks: int = 8,
+    nb_channels_picture: int = 3,
+    nb_channels_cartoon: int = 3,
+    nb_channels_1_h_l_gen: int = 64,
+    nb_channels_1_h_l_disc: int = 32
+    ) -> None:
+        self.generator = Generator(
+            nb_channels_picture, 
+            nb_channels_cartoon, 
+            nb_channels_1_h_l_gen, 
+            nb_resnet_blocks
+        )
+        self.discriminator = Discriminator(
+            nb_channels_cartoon, 
+            1, 
+            nb_channels_1_h_l_disc
+        )
+
+        self.vgg19 = VGG19(
+            config.VGG_WEIGHTS,
+            feature_mode=True
+        
+        )
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.generator.to(self.device)
@@ -76,19 +97,20 @@ class CartoonGan():
         l1_loss = nn.L1Loss().to(self.device)
 
         for epoch in range(parameters.epochs):
+            logging.info("Epoch %s/%s", epoch, parameters.epochs)
             epoch_start_time = time()
             reconstruction_losses = []
-            for picture_batch in pictures_loader:
+            for picture_batch in tqdm(pictures_loader):
                 picture_batch = picture_batch.to(self.device)
                 self.gen_optimizer.zero_grad()
 
-                fake_cartoon = self.generator(picture_batch)
+                cartoons_fake = self.generator(picture_batch)
 
-                picture_features = self.vgg19((picture_batch + 1) / 2)
-                fake_features = self.vgg19((fake_cartoon + 1) / 2)
+                features_pictures = self.vgg19((picture_batch + 1) / 2)
+                features_fake = self.vgg19((cartoons_fake + 1) / 2)
 
                 # image reconstruction with only L1 loss function
-                reconstruction_loss = 10 * l1_loss(fake_features, picture_features.detach())
+                reconstruction_loss = 10 * l1_loss(features_fake, features_pictures.detach())
                 reconstruction_losses.append(reconstruction_loss.item())
 
                 reconstruction_loss.backward()
@@ -103,10 +125,10 @@ class CartoonGan():
                 torch.mean(torch.FloatTensor(reconstruction_losses)))
             )
 
-        self.save_model(
-            os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), 
-            os.path.join(config.WEIGHTS_FOLDER, f"pretrained_disc_{epoch}.pkl")
-        )
+            self.save_model(
+                os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), 
+                os.path.join(config.WEIGHTS_FOLDER, f"pretrained_disc_{epoch}.pkl")
+            )
 
 
     def train(self,
@@ -130,18 +152,21 @@ class CartoonGan():
         fake = torch.zeros(cartoon_loader.batch_size, 1, parameters.input_size // 4, parameters.input_size // 4).to(self.device)
 
         for epoch in range(parameters.epochs):
+            logging.info("Epoch %s/%s", epoch, parameters.epochs)
+
             epoch_start_time = time()
             self.generator.train()
 
-            parameters.generator_scheduler.step()
-            parameters.discriminator_scheduler.step()
+            self.gen_scheduler.step()
+            self.disc_scheduler.step()
             disc_losses = []
             gen_losses = []
             conditional_losses = []
-            for picture_batch, cartoon_batch in zip(picture_loader, cartoon_loader):
+
+            for picture_batch, cartoon_batch in tqdm(zip(picture_loader, cartoon_loader), total=len(picture_loader)):
 
                 # e = cartoon_batch[:, :, :, parameters.input_size:]
-                cartoon_batch = cartoon_batch[:, :, :, : parameters.input_size]
+                cartoon_batch = cartoon_batch # [:, :, :, : parameters.input_size]
                 picture_batch = picture_batch.to(self.device)
                 cartoon_batch = cartoon_batch.to(self.device)
                 # e = e.to(self.device)
@@ -201,6 +226,10 @@ class CartoonGan():
         # torch.save(D.state_dict(), os.path.join(args.name + '_results', 'discriminator_latest.pkl'))
         torch.save(self.generator.state_dict(), generator_path)
         torch.save(self.discriminator.state_dict(), discriminator_path)
+
+    def load_model(self, generator_path: str, discriminator_path: str) -> None:
+        """loads the model from path"""
+        pass
 
     def cartoonize(self, pictures: List[NDArray[(3, Any, Any)]]) -> List[NDArray[(3, Any, Any), np.int32]]:
         """Predict """

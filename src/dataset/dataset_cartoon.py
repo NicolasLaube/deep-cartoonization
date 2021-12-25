@@ -16,7 +16,13 @@ class CartoonDataset(ImageLoader):
         self, transform: Optional[callable] = None, train: bool = True, movies: List[Movie] = config.MOVIES, **kwargs
     ) -> None:
         self.movies = movies
-        ImageLoader.__init__(self, transform, config.FRAMES_TRAIN_CSV if train else config.FRAMES_TEST_CSV, **kwargs)
+        ImageLoader.__init__(
+            self, 
+            transform=transform, 
+            csv_path=config.FRAMES_TRAIN_CSV if train else config.FRAMES_TEST_CSV,
+            folder=config.CARTOON_FOLDER
+            **kwargs
+        )
         self.__load_specific_frames()
 
 

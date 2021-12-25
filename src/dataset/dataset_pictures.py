@@ -9,7 +9,13 @@ class PicturesDataset(ImageLoader):
 
     def __init__(self, transform: Optional[callable] = None, train: bool = True, **kwargs) -> None:
         self.train = train
-        ImageLoader.__init__(self, transform, config.IMAGES_TRAIN_CSV if train else config.IMAGES_TEST_CSV, **kwargs)
+        ImageLoader.__init__(
+            self, 
+            transform=transform,
+            csv_path=config.IMAGES_TRAIN_CSV if train else config.IMAGES_TEST_CSV, 
+            folder=config.PICTURES_FOLDER,
+            **kwargs
+        )
 
 
 if __name__ == "__main__":
