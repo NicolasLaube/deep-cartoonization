@@ -238,8 +238,6 @@ class CartoonGan():
 
     def save_model(self, generator_path: str, discriminator_path: str) -> None:
         """Save a model"""
-        # torch.save(G.state_dict(), os.path.join(args.name + '_results', 'generator_latest.pkl'))
-        # torch.save(D.state_dict(), os.path.join(args.name + '_results', 'discriminator_latest.pkl'))
         torch.save(self.generator.state_dict(), generator_path)
         torch.save(self.discriminator.state_dict(), discriminator_path)
 
@@ -253,7 +251,6 @@ class CartoonGan():
                 cartoons.extend(self.generator(pictures_batch))
 
         return cartoons
-
 
     def __repr__(self) -> str:
         """Prints the model's architecture"""
