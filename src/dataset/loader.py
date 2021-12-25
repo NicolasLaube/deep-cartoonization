@@ -28,9 +28,9 @@ class ImageLoader(Dataset):
             return len(self.df_images[:self.size])
         return len(self.df_images)
 
-    def __getitem__(self, index: int) -> NDArray[(Any, Any), np.int32]:
+    def __getitem__(self, index: int) -> Tuple[str, NDArray[(Any, Any), np.int32]]:
         """Get an item"""
         if self.transform is not None:
-            return self.transform(cv2.imread(self.df_images["path"][index]))
-        return cv2.imread(self.df_images["path"][index])
+            return self.df_images["name"][index], self.transform(cv2.imread(self.df_images["path"][index]))
+        return self.df_images["name"][index], cv2.imread(self.df_images["path"][index])
     

@@ -10,6 +10,7 @@ import logging
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from datetime import datetime
 
 from src import config
 import src.models.networks as networks
@@ -56,7 +57,18 @@ class CartoonGan():
         self.gen_scheduler: Optional[optim.Optimizer] = None
         self.disc_scheduler: Optional[optim.Optimizer] = None
 
+    def load_model(self, generator_path: str, discriminator_path: str) -> None:
+        """Loads the model from path"""
+        if torch.cuda.is_available():
+            self.discriminator.load_state_dict(torch.load(discriminator_path))
+            self.generator.load_state_dict(torch.load(generator_path))
+        else:
+            self.discriminator.load_state_dict(torch.load(discriminator_path, map_location=lambda storage, loc: storage))
+            self.generator.load_state_dict(torch.load(generator_path, map_location=lambda storage, loc: storage))
+
+
     def __load_optimizers(self, parameters: CartoonGanParameters):
+        """Load optimizers"""
         self.gen_optimizer = optim.Adam(
             self.generator.parameters(), 
             lr=parameters.gen_lr, 
@@ -96,6 +108,8 @@ class CartoonGan():
 
         l1_loss = nn.L1Loss().to(self.device)
 
+        last_save_time = datetime.now()
+
         for epoch in range(parameters.epochs):
             logging.info("Epoch %s/%s", epoch, parameters.epochs)
             epoch_start_time = time()
@@ -116,6 +130,13 @@ class CartoonGan():
                 reconstruction_loss.backward()
                 self.gen_optimizer.step()
 
+                if ((datetime.now() - last_save_time).seconds / 60) > 30:
+                    # save all 30 minutes
+                    self.save_model(
+                        os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), 
+                        os.path.join(config.WEIGHTS_FOLDER, f"pretrained_disc_{epoch}.pkl")
+                    )
+
             per_epoch_time = time() - epoch_start_time
 
             logging.info(
@@ -125,12 +146,6 @@ class CartoonGan():
                 torch.mean(torch.FloatTensor(reconstruction_losses)))
             )
 
-            self.save_model(
-                os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), 
-                os.path.join(config.WEIGHTS_FOLDER, f"pretrained_disc_{epoch}.pkl")
-            )
-
-
     def train(self,
         *,
         cartoon_loader: DataLoader, 
@@ -138,6 +153,7 @@ class CartoonGan():
         parameters: CartoonGanParameters
         ) -> None:
         """Train function"""
+
         assert len(cartoon_loader) == len(picture_loader), "Lengths should be identical"
         
         self.__load_optimizers(parameters)
@@ -227,12 +243,17 @@ class CartoonGan():
         torch.save(self.generator.state_dict(), generator_path)
         torch.save(self.discriminator.state_dict(), discriminator_path)
 
-    def load_model(self, generator_path: str, discriminator_path: str) -> None:
-        """loads the model from path"""
-        pass
+    def cartoonize_dataset(self, pictures_loader: DataLoader) -> List[NDArray[(3, Any, Any), np.int32]]:
+        """Cartoonize pictures"""
+        cartoons = []
+        with torch.no_grad():
+            self.generator.eval()
+            for pictures_batch in tqdm(pictures_loader):
+                pictures_batch = pictures_batch.to(self.device)
+                cartoons.extend(self.generator(pictures_batch))
 
-    def cartoonize(self, pictures: List[NDArray[(3, Any, Any)]]) -> List[NDArray[(3, Any, Any), np.int32]]:
-        """Predict """
+        return cartoons
+
 
     def __repr__(self) -> str:
         """Prints the model's architecture"""
