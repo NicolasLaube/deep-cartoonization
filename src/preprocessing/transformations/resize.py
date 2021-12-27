@@ -11,7 +11,7 @@ class CropMode(Enum):
     CROP_RANDOM = "random"
 
 
-CropModes = NewType("Colors", CropMode)
+CropModes = NewType("CropModes", CropMode)
 
 
 def resize_no_crop(
@@ -56,10 +56,11 @@ def resize(
     Resize an image with a specific mode
     """
     if new_size == None:
-        return image
-    if crop_mode == CropMode.RESIZE:
-        return resize_no_crop(image, new_size)
-    elif crop_mode == CropMode.CROP_CENTER:
-        return resize_crop_center(image, new_size)
-    elif crop_mode == CropMode.CROP_RANDOM:
-        return resize_crop_random(image, new_size)
+        image = image
+    elif crop_mode == CropMode.RESIZE.value:
+        image = resize_no_crop(image, new_size)
+    elif crop_mode == CropMode.CROP_CENTER.value:
+        image = resize_crop_center(image, new_size)
+    elif crop_mode == CropMode.CROP_RANDOM.value:
+        image = resize_crop_random(image, new_size)
+    return image

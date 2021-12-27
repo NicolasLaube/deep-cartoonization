@@ -9,7 +9,7 @@ class RatioFilterMode(Enum):
     FILTER_LANDSCAPE = "landscape"
 
 
-RatioFilterModes = NewType(RatioFilterMode)
+RatioFilterModes = NewType("RatioFilterModes", RatioFilterMode)
 
 
 def filter_ratio(
@@ -18,9 +18,9 @@ def filter_ratio(
     """
     To filter images with a specific ratio (portrait, landscape...)
     """
-    if ratio_filter_mode == RatioFilterMode.NO_FILTER:
+    if ratio_filter_mode == RatioFilterMode.NO_FILTER.value:
         return df_images
-    elif ratio_filter_mode == RatioFilterMode.FILTER_PORTRAIT:
+    elif ratio_filter_mode == RatioFilterMode.FILTER_PORTRAIT.value:
         return df_images[df_images["width"] / df_images["height"] > 1]
-    elif ratio_filter_mode == RatioFilterMode.FILTER_LANDSCAPE:
+    elif ratio_filter_mode == RatioFilterMode.FILTER_LANDSCAPE.value:
         return df_images[df_images["width"] / df_images["height"] < 1]
