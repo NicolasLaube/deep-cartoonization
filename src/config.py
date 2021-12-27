@@ -26,7 +26,7 @@ IMAGES_TRAIN_CSV = os.path.join(DATA_FOLDER, "images_train.csv")
 IMAGES_TEST_CSV = os.path.join(DATA_FOLDER, "images_test.csv")
 
 
-WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "weights")
+WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "weights", "pretrained")
 ####################
 ### About movies ###
 ####################
@@ -45,7 +45,7 @@ MOVIES = [
     Movie.Zootopia,
 ]
 
-VGG_WEIGHTS = os.path.join(ROOT_FOLDER, "weights", "pretrained", "vgg19.pth")
+VGG_WEIGHTS = os.path.join(ROOT_FOLDER, "weights", "vgg", "vgg19.pth")
 INPUT_CHANNELS = 3
 OUTPUT_CHANNELS = 3
 #######################

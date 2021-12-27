@@ -131,6 +131,7 @@ class CartoonGan():
                 self.gen_optimizer.step()
 
                 if ((datetime.now() - last_save_time).seconds / 60) > 30:
+                    last_save_time = datetime.now()
                     # save all 30 minutes
                     self.save_model(
                         os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), 

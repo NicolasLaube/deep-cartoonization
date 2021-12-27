@@ -5,8 +5,6 @@ from nptyping import NDArray
 from torch.utils.data import Dataset
 import cv2
 import pandas as pd
-from torchvision import transforms
-
 
 class ImageLoader(Dataset):
     """Generic image loader class"""
