@@ -21,23 +21,23 @@ def create_train_test_frames():
     test.to_csv(config.FRAMES_TEST_CSV)
 
 
-def create_train_test_images():
+def create_train_test_pictures():
     """
-    Create and save a train and a test file for images
+    Create and save a train and a test file for pictures
     """
-    df_images = pd.read_csv(config.IMAGES_FILTERED_CSV, index_col=0)
+    df_pictures = pd.read_csv(config.PICTURES_FILTERED_CSV, index_col=0)
     train, test = train_test_split(
-        df_images,
+        df_pictures,
         test_size=config.TEST_SIZE,
         random_state=config.RANDOM_STATE,
         shuffle=True,
     )
     train = train.reset_index(drop=True)
     test = test.reset_index(drop=True)
-    train.to_csv(config.IMAGES_TRAIN_CSV)
-    test.to_csv(config.IMAGES_TEST_CSV)
+    train.to_csv(config.PICTURES_TRAIN_CSV)
+    test.to_csv(config.PICTURES_TEST_CSV)
 
 
 if __name__ == "__main__":
     create_train_test_frames()
-    create_train_test_images()
+    create_train_test_pictures()

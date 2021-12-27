@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+from PIL import Image
 from src import config
 
 
@@ -16,6 +17,14 @@ def extract_frames(movie: str) -> None:
     return frames_movie
 
 
+def extract_size(row):
+    """
+    Extract image size
+    """
+    image = Image.open(row["path"])
+    return image.size
+
+
 def create_all_frames_csv():
     """
     Create a csv file with all the frames, and information on them
@@ -24,21 +33,23 @@ def create_all_frames_csv():
     for movie in config.MOVIES:
         frames_list.extend(extract_frames(movie.name))
     df = pd.DataFrame(frames_list)
+    df[["width", "height"]] = df.apply(extract_size, axis=1, result_type="expand")
     df.to_csv(config.FRAMES_ALL_CSV)
 
 
-def create_all_images_csv():
+def create_all_pictures_csv():
     """
-    Create a csv file with all the flickr images, and information on them
+    Create a csv file with all the flickr pictures, and information on them
     """
     df = pd.read_csv(config.PICTURES_CSV)
     df = df.rename(columns={"image": "name"})
     df["path"] = df["name"].apply(
         lambda name: os.path.join(config.PICTURES_FOLDER, name)
     )
-    df.to_csv(config.IMAGES_ALL_CSV)
+    df[["width", "height"]] = df.apply(extract_size, axis=1, result_type="expand")
+    df.to_csv(config.PICTURES_ALL_CSV)
 
 
 if __name__ == "__main__":
     create_all_frames_csv()
-    create_all_images_csv()
+    create_all_pictures_csv()

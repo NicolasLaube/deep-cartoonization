@@ -10,7 +10,7 @@ class PicturesDatasetLoader(ImageLoader):
     def __init__(self, train: bool = True, **kwargs) -> None:
         self.train = train
         if train:
-            csv_path = config.IMAGES_TRAIN_CSV
+            csv_path = config.PICTURES_TRAIN_CSV
         else:
-            csv_path = config.IMAGES_TEST_CSV
+            csv_path = config.PICTURES_TEST_CSV
         ImageLoader.__init__(self, csv_path, **kwargs)

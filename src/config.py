@@ -20,10 +20,10 @@ FRAMES_FILTERED_CSV = os.path.join(DATA_FOLDER, "frames_all.csv")
 FRAMES_TRAIN_CSV = os.path.join(DATA_FOLDER, "frames_train.csv")
 FRAMES_TEST_CSV = os.path.join(DATA_FOLDER, "frames_test.csv")
 
-IMAGES_ALL_CSV = os.path.join(DATA_FOLDER, "images_all.csv")
-IMAGES_FILTERED_CSV = os.path.join(DATA_FOLDER, "images_all.csv")
-IMAGES_TRAIN_CSV = os.path.join(DATA_FOLDER, "images_train.csv")
-IMAGES_TEST_CSV = os.path.join(DATA_FOLDER, "images_test.csv")
+PICTURES_ALL_CSV = os.path.join(DATA_FOLDER, "pictures_all.csv")
+PICTURES_FILTERED_CSV = os.path.join(DATA_FOLDER, "pictures_all.csv")
+PICTURES_TRAIN_CSV = os.path.join(DATA_FOLDER, "pictures_train.csv")
+PICTURES_TEST_CSV = os.path.join(DATA_FOLDER, "pictures_test.csv")
 
 ####################
 ### About movies ###
