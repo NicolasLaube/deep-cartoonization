@@ -4,7 +4,7 @@ from src import config
 from src.dataset.image_loader import ImageLoader
 
 
-class PicturesDatasetLoader(ImageLoader):
+class PicturesDataset(ImageLoader):
     """Cartoon dataset loader class"""
 
     def __init__(

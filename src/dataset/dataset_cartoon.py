@@ -7,7 +7,7 @@ from src.dataset.image_loader import ImageLoader
 from src.dataset.utils import Movie
 
 
-class CartoonDatasetLoader(ImageLoader):
+class CartoonDataset(ImageLoader):
     """Cartoon dataset loader class"""
 
     def __init__(
@@ -22,5 +22,5 @@ class CartoonDatasetLoader(ImageLoader):
 
 
 if __name__ == "__main__":
-    loader = CartoonDatasetLoader()
+    loader = CartoonDataset()
     print(loader[0])

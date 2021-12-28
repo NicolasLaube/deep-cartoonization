@@ -13,7 +13,7 @@ FRAMES_FOLDER = os.path.join(DATA_FOLDER, "cartoon_frames")
 FRAMES_CSV = os.path.join(DATA_FOLDER, "cartoon_csv")
 
 PICTURES_FOLDER = os.path.join(DATA_FOLDER, "flickr", "Images")
-PICTURES_CSV = os.path.join(DATA_FOLDER, "flickr", "captions.csv")
+PICTURES_CSV = os.path.join(DATA_FOLDER, "flickr", "captions.txt")
 
 FRAMES_ALL_CSV = os.path.join(DATA_FOLDER, "frames_all.csv")
 FRAMES_FILTERED_CSV = os.path.join(DATA_FOLDER, "frames_all.csv")
@@ -25,6 +25,8 @@ PICTURES_FILTERED_CSV = os.path.join(DATA_FOLDER, "pictures_all.csv")
 PICTURES_TRAIN_CSV = os.path.join(DATA_FOLDER, "pictures_train.csv")
 PICTURES_TEST_CSV = os.path.join(DATA_FOLDER, "pictures_test.csv")
 
+
+WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "weights", "pretrained")
 ####################
 ### About movies ###
 ####################
@@ -43,6 +45,9 @@ MOVIES = [
     Movie.Zootopia,
 ]
 
+VGG_WEIGHTS = os.path.join(ROOT_FOLDER, "weights", "vgg", "vgg19.pth")
+INPUT_CHANNELS = 3
+OUTPUT_CHANNELS = 3
 #######################
 ### Training params ###
 #######################
