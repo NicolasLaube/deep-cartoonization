@@ -8,10 +8,7 @@ class PicturesDatasetLoader(ImageLoader):
     """Cartoon dataset loader class"""
 
     def __init__(
-        self,
-        train: bool = True,
-        filter_data: callable = None,
-        transform: callable = None,
+        self, filter_data: callable, transform: callable, train: bool = True
     ) -> None:
         self.train = train
         if train:
