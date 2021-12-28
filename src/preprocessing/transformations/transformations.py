@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Tuple
 import numpy as np
 from nptyping import NDArray
 
@@ -11,7 +11,7 @@ class Transform:
 
     def __init__(
         self,
-        new_size: tuple[int, int] = (256, 256),
+        new_size: Tuple[int, int] = (256, 256),
         crop_mode: resize.CropModes = resize.CropMode.RESIZE.value,
     ) -> None:
         self.new_size = new_size
@@ -21,15 +21,15 @@ class Transform:
         self, image: NDArray[(Any, Any), np.int32]
     ) -> NDArray[(Any, Any), np.int32]:
         """Transform cartoon frames"""
-        return self._main_filter(image)
+        return self.__main_filter(image)
 
     def picture_transform(
         self, image: NDArray[(Any, Any), np.int32]
     ) -> NDArray[(Any, Any), np.int32]:
         """Transform pictures"""
-        return self._main_filter(image)
+        return self.__main_filter(image)
 
-    def _main_filter(
+    def __main_filter(
         self, image: NDArray[(Any, Any), np.int32]
     ) -> NDArray[(Any, Any), np.int32]:
         """Transform images (functions that are common to both frame and picture preprocessing)"""

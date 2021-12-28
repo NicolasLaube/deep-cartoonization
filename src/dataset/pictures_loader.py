@@ -8,11 +8,14 @@ class PicturesDatasetLoader(ImageLoader):
     """Cartoon dataset loader class"""
 
     def __init__(
-        self, train: bool = True, filter: callable = None, transform: callable = None
+        self,
+        train: bool = True,
+        filter_data: callable = None,
+        transform: callable = None,
     ) -> None:
         self.train = train
         if train:
             csv_path = config.PICTURES_TRAIN_CSV
         else:
             csv_path = config.PICTURES_TEST_CSV
-        ImageLoader.__init__(self, csv_path, filter, transform)
+        ImageLoader.__init__(self, csv_path, filter_data, transform)

@@ -1,8 +1,7 @@
 from torchvision import transforms
 import numpy as np
 from nptyping import NDArray
-from typing import Any, NewType
-from enum import Enum
+from typing import Any
 
 
 def normalize(image: NDArray[(Any, Any), np.int32]) -> NDArray[(Any, Any), np.int32]:

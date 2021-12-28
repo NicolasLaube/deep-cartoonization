@@ -1,7 +1,5 @@
 """Generic Image Loader"""
 from typing import Any
-import numpy as np
-from nptyping import NDArray
 from torch.utils.data import Dataset
 from PIL import Image
 import pandas as pd
@@ -10,15 +8,17 @@ import pandas as pd
 class ImageLoader(Dataset):
     """Generic image loader class"""
 
-    def __init__(self, csv_path: str, filter: callable, transform: callable) -> None:
+    def __init__(
+        self, csv_path: str, filter_data: callable, transform: callable
+    ) -> None:
         self.csv_path = csv_path
         self.df_images = None
-        self.filter = filter
+        self.filter_data = filter_data
         self.transform = transform
-        self._load_images()
-        self.df_images = self.filter(self.df_images)
+        self.__load_images()
+        self.df_images = self.filter_data(self.df_images)
 
-    def _load_images(self) -> None:
+    def __load_images(self) -> None:
         """Loads the list of images"""
         self.df_images = pd.read_csv(self.csv_path, index_col=0)
 

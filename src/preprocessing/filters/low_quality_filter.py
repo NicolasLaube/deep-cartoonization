@@ -1,8 +1,9 @@
+from typing import Tuple
 import pandas as pd
 
 
 def filter_low_quality(
-    df_images: pd.DataFrame, new_size: tuple[int, int]
+    df_images: pd.DataFrame, new_size: Tuple[int, int]
 ) -> pd.DataFrame:
     """
     To filter images with a lower quality than the one required

@@ -1,7 +1,7 @@
 from torchvision import transforms
 import numpy as np
 from nptyping import NDArray
-from typing import Any, NewType
+from typing import Any, NewType, Tuple
 from enum import Enum
 
 
@@ -15,7 +15,7 @@ CropModes = NewType("CropModes", CropMode)
 
 
 def resize_no_crop(
-    image: NDArray[(Any, Any), np.int32], new_size: tuple[int, int]
+    image: NDArray[(Any, Any), np.int32], new_size: Tuple[int, int]
 ) -> NDArray[(Any, Any), np.int32]:
     """
     Resize an image without cropping it
@@ -24,7 +24,7 @@ def resize_no_crop(
 
 
 def resize_crop_center(
-    image: NDArray[(Any, Any), np.int32], new_size: tuple[int, int]
+    image: NDArray[(Any, Any), np.int32], new_size: Tuple[int, int]
 ) -> NDArray[(Any, Any), np.int32]:
     """
     Resize an image after cropping it, keeping its center part
@@ -36,7 +36,7 @@ def resize_crop_center(
 
 
 def resize_crop_random(
-    image: NDArray[(Any, Any), np.int32], new_size: tuple[int, int]
+    image: NDArray[(Any, Any), np.int32], new_size: Tuple[int, int]
 ) -> NDArray[(Any, Any), np.int32]:
     """
     Resize an image after cropping it, keeping a random part
@@ -49,7 +49,7 @@ def resize_crop_random(
 
 def resize(
     image: NDArray[(Any, Any), np.int32],
-    new_size: tuple[int, int],
+    new_size: Tuple[int, int],
     crop_mode: CropModes,
 ) -> NDArray[(Any, Any), np.int32]:
     """
