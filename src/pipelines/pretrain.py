@@ -73,7 +73,7 @@ pretraining_parameters = CartoonGanParameters(
 
 """### Prepare data"""
 
-from src.extraction.__main__ import *
+from src.extraction.main_csv_extractor import *
 
 # Extract the data if needed
 

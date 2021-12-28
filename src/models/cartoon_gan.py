@@ -25,19 +25,19 @@ class CartoonGan():
     nb_resnet_blocks: int = 8,
     nb_channels_picture: int = 3,
     nb_channels_cartoon: int = 3,
-    nb_channels_1_h_l_gen: int = 64,
-    nb_channels_1_h_l_disc: int = 32
+    nb_channels_1st_hidden_layer_gen: int = 64,
+    nb_channels_1st_hidden_layer_disc: int = 32
     ) -> None:
         self.generator = Generator(
             nb_channels_picture, 
             nb_channels_cartoon, 
-            nb_channels_1_h_l_gen, 
+            nb_channels_1st_hidden_layer_gen, 
             nb_resnet_blocks
         )
         self.discriminator = Discriminator(
             nb_channels_cartoon, 
             1, 
-            nb_channels_1_h_l_disc
+            nb_channels_1st_hidden_layer_disc
         )
 
         self.vgg19 = VGG19(
@@ -98,9 +98,8 @@ class CartoonGan():
         self.vgg19.eval()
 
     def pretrain(self,
-        *,
         pictures_loader: DataLoader, 
-        parameters: CartoonGanParameters
+        parameters: CartoonGanParameters,
         ) -> None:
         """Pretrains model"""
         self.__load_optimizers(parameters)
@@ -234,8 +233,8 @@ class CartoonGan():
                     last_save_time = datetime.now()
                     # save all 30 minutes
                     self.save_model(
-                        os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), 
-                        os.path.join(config.WEIGHTS_FOLDER, f"pretrained_disc_{epoch}.pkl")
+                        os.path.join(config.WEIGHTS_FOLDER, f"trained_gen_{epoch}.pkl"), 
+                        os.path.join(config.WEIGHTS_FOLDER, f"trained_disc_{epoch}.pkl")
                     )
 
             per_epoch_time = time() - epoch_start_time
