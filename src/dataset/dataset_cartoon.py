@@ -1,11 +1,9 @@
 """Cartoon dataset Loader"""
-from typing import List, Optional
-
-from torchvision import transforms
+from typing import List
 
 
 from src import config
-from src.dataset.loader import ImageLoader
+from src.dataset.image_loader import ImageLoader
 from src.dataset.utils import Movie
 
 
@@ -13,32 +11,16 @@ class CartoonDataset(ImageLoader):
     """Cartoon dataset loader class"""
 
     def __init__(
-        self, transform: Optional[callable] = None, train: bool = True, movies: List[Movie] = config.MOVIES, **kwargs
+        self, filter_data: callable, transform: callable, train: bool = True
     ) -> None:
-        self.movies = movies
-        ImageLoader.__init__(
-            self, 
-            transform=transform, 
-            csv_path=config.FRAMES_TRAIN_CSV if train else config.FRAMES_TEST_CSV,
-            folder=config.CARTOON_FOLDER
-            **kwargs
-        )
-        self.__load_specific_frames()
-
-
-    def __load_specific_frames(self) -> None:
-        """Loads the correct list of frames"""
-        self.df_images = self.df_images[
-            self.df_images["movie"].isin([movie.name for movie in self.movies])
-        ]
+        self.train = train
+        if train:
+            csv_path = config.FRAMES_TRAIN_CSV
+        else:
+            csv_path = config.FRAMES_TEST_CSV
+        ImageLoader.__init__(self, csv_path, filter_data, transform)
 
 
 if __name__ == "__main__":
-    from src.preprocessing.preprocessor import Preprocessor
-
-    p = Preprocessor(size=256)
-
-    dd = CartoonDataset(
-        train=True,
-        transform=p.cartoon_preprocessor()
-    )
+    loader = CartoonDataset()
+    print(loader[0])

@@ -25,14 +25,16 @@ from torch.utils.data import DataLoader
 from src.models.cartoon_gan import CartoonGan
 from src import config
 from src.dataset.dataset_pictures import PicturesDataset
-from src.preprocessing.preprocessor import Preprocessor
+from src.preprocessing.filters import Filter
+from src.preprocessing.transformations import Transform
 
-preprocessor = Preprocessor(size=256)
+filter_data = Filter(new_size=(256, 256))
+transform = Transform(new_size=(256, 256), crop_mode="center")
 
 test_pictures_dataset = PicturesDataset(
     train=False,
-    transform=preprocessor.picture_preprocessor(),
-    size=50
+    filter_data=filter_data.picture_filter,
+    transform=transform.picture_transform
 )
 
 cartoon_gan = CartoonGan(

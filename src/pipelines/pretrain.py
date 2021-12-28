@@ -82,17 +82,19 @@ from src.extraction.main_csv_extractor import *
 # create_train_test_frames()
 # create_train_test_images()
 
+from src.preprocessing.filters import Filter
+from src.preprocessing.transformations import Transform
 from src.dataset.dataset_cartoon import CartoonDataset
 from src.dataset.dataset_pictures import PicturesDataset
-from src.preprocessing.preprocessor import Preprocessor
 from torch.utils.data import DataLoader
 
-preprocessor = Preprocessor(size=256)
+filter_data = Filter(new_size=(256, 256))
+transform = Transform(new_size=(256, 256), crop_mode="center")
 
 pictures_dataset = PicturesDataset(
     train=True,
-    transform=preprocessor.picture_preprocessor(),
-    size=None # keep all data
+    filter_data=filter_data.picture_filter,
+    transform=transform.picture_transform
 )
 
 train_pictures_loader = DataLoader(
