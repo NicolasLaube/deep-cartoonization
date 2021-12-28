@@ -137,7 +137,10 @@ class CartoonGan():
                         os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), 
                         os.path.join(config.WEIGHTS_FOLDER, f"pretrained_disc_{epoch}.pkl")
                     )
-
+            self.save_model(
+                os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), 
+                os.path.join(config.WEIGHTS_FOLDER, f"pretrained_disc_{epoch}.pkl")
+            )
             per_epoch_time = time() - epoch_start_time
 
             logging.info(
@@ -236,6 +239,10 @@ class CartoonGan():
                         os.path.join(config.WEIGHTS_FOLDER, f"trained_gen_{epoch}.pkl"), 
                         os.path.join(config.WEIGHTS_FOLDER, f"trained_disc_{epoch}.pkl")
                     )
+            self.save_model(
+                os.path.join(config.WEIGHTS_FOLDER, f"trained_gen_{epoch}.pkl"), 
+                os.path.join(config.WEIGHTS_FOLDER, f"trained_disc_{epoch}.pkl")
+            )
 
             per_epoch_time = time() - epoch_start_time
 
