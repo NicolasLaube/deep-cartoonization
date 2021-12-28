@@ -12,6 +12,7 @@ class Preprocessor:
         """Preprocesses cartoons"""
         return transforms.Compose([
             transforms.ToTensor(),
+            transforms.Resize((self.size, self.size)),
             transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
         ])
 

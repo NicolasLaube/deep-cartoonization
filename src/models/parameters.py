@@ -13,3 +13,4 @@ class CartoonGanParameters():
     gen_beta2: float = 0.999
     disc_beta1: float = 0.5
     disc_beta2: float = 0.999
+    input_size: int = 256

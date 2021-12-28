@@ -131,6 +131,7 @@ class CartoonGan():
                 self.gen_optimizer.step()
 
                 if ((datetime.now() - last_save_time).seconds / 60) > 30:
+                    # reset time
                     last_save_time = datetime.now()
                     # save all 30 minutes
                     self.save_model(
@@ -149,13 +150,13 @@ class CartoonGan():
 
     def train(self,
         *,
-        cartoon_loader: DataLoader, 
-        picture_loader: DataLoader, 
+        cartoons_loader: DataLoader, 
+        pictures_loader: DataLoader, 
         parameters: CartoonGanParameters
         ) -> None:
         """Train function"""
 
-        assert len(cartoon_loader) == len(picture_loader), "Lengths should be identical"
+        assert len(cartoons_loader) == len(pictures_loader), "Lengths should be identical"
         
         self.__load_optimizers(parameters)
         self.__set_train_mode()
@@ -164,9 +165,11 @@ class CartoonGan():
         bce_loss = nn.BCELoss().to(self.device)
 
         self.vgg19.eval()
+        last_save_time = datetime.now()
 
-        real = torch.ones(cartoon_loader.batch_size, 1, parameters.input_size // 4, parameters.input_size // 4).to(self.device)
-        fake = torch.zeros(cartoon_loader.batch_size, 1, parameters.input_size // 4, parameters.input_size // 4).to(self.device)
+
+        real = torch.ones(cartoons_loader.batch_size, 1, parameters.input_size // 4, parameters.input_size // 4).to(self.device)
+        fake = torch.zeros(cartoons_loader.batch_size, 1, parameters.input_size // 4, parameters.input_size // 4).to(self.device)
 
         for epoch in range(parameters.epochs):
             logging.info("Epoch %s/%s", epoch, parameters.epochs)
@@ -180,7 +183,7 @@ class CartoonGan():
             gen_losses = []
             conditional_losses = []
 
-            for picture_batch, cartoon_batch in tqdm(zip(picture_loader, cartoon_loader), total=len(picture_loader)):
+            for picture_batch, cartoon_batch in tqdm(zip(pictures_loader, cartoons_loader), total=len(pictures_loader)):
 
                 # e = cartoon_batch[:, :, :, parameters.input_size:]
                 cartoon_batch = cartoon_batch # [:, :, :, : parameters.input_size]
@@ -225,6 +228,15 @@ class CartoonGan():
 
                 gen_loss.backward()
                 self.gen_optimizer.step()
+
+                if ((datetime.now() - last_save_time).seconds / 60) > 30:
+                    # reset time
+                    last_save_time = datetime.now()
+                    # save all 30 minutes
+                    self.save_model(
+                        os.path.join(config.WEIGHTS_FOLDER, f"pretrained_gen_{epoch}.pkl"), 
+                        os.path.join(config.WEIGHTS_FOLDER, f"pretrained_disc_{epoch}.pkl")
+                    )
 
             per_epoch_time = time() - epoch_start_time
 
