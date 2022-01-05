@@ -1,6 +1,7 @@
 from typing import Optional
 from torch.optim import Optimizer
 from dataclasses import dataclass
+import enum
 
 @dataclass
 class CartoonGanParameters():
@@ -14,3 +15,9 @@ class CartoonGanParameters():
     disc_beta1: float = 0.5
     disc_beta2: float = 0.999
     input_size: int = 256
+
+
+class Architecture(enum.Enum):
+    UNET = "UNET architecture"
+    MODULAR = "Modular architecture"
+    FIXED = "Fixed architecture"

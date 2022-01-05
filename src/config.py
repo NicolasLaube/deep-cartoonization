@@ -13,7 +13,7 @@ FRAMES_FOLDER = os.path.join(DATA_FOLDER, "cartoon_frames")
 FRAMES_CSV = os.path.join(DATA_FOLDER, "cartoon_csv")
 
 PICTURES_FOLDER = os.path.join(DATA_FOLDER, "flickr", "Images")
-PICTURES_CSV = os.path.join(DATA_FOLDER, "flickr", "captions.txt")
+PICTURES_CSV = os.path.join(DATA_FOLDER, "flickr", "captions.csv")
 
 FRAMES_ALL_CSV = os.path.join(DATA_FOLDER, "frames_all.csv")
 FRAMES_FILTERED_CSV = os.path.join(DATA_FOLDER, "frames_all.csv")
@@ -54,3 +54,12 @@ OUTPUT_CHANNELS = 3
 
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
+
+
+## NETWORK ARCHITECTURE
+
+NB_RESNET_BLOCKS = (8,)
+NB_CHANNELS_PICTURE = (3,)
+NB_CHANNELS_CARTOON = (3,)
+NB_CHANNELS_1st_HIDDEN_LAYER_GEN = (64,)
+NB_CHANNELS_1st_HIDDEN_LAYER_DISC = 32

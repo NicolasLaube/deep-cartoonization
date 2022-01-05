@@ -13,38 +13,44 @@ from tqdm import tqdm
 from datetime import datetime
 
 from src import config
-import src.models.networks as networks
-from src.models.networks.generator import Generator
-from src.models.networks.discriminator import Discriminator
-from src.models.parameters import CartoonGanParameters
-from src.models.networks.vgg19 import VGG19
 
+from src.models.generators.generator_modular import ModularGenerator
+from src.models.discriminators.discriminator_modular import ModularDiscriminator
+from src.models.utils.parameters import CartoonGanParameters, Architecture
+from src.models.utils.vgg19 import VGG19
+from src.models.generators.generator_fixed import FixedGenerator
+from src.models.discriminators.discriminator_fixed import FixedDiscriminator
+from src.models.generators.generator_unet import UNet
 
 class CartoonGan():
-    def __init__(self, 
-    nb_resnet_blocks: int = 8,
-    nb_channels_picture: int = 3,
-    nb_channels_cartoon: int = 3,
-    nb_channels_1st_hidden_layer_gen: int = 64,
-    nb_channels_1st_hidden_layer_disc: int = 32
+    def __init__(self,
+    architecture: Architecture = Architecture.FIXED
     ) -> None:
-        self.generator = Generator(
-            nb_channels_picture, 
-            nb_channels_cartoon, 
-            nb_channels_1st_hidden_layer_gen, 
-            nb_resnet_blocks
-        )
-        self.discriminator = Discriminator(
-            nb_channels_cartoon, 
-            1, 
-            nb_channels_1st_hidden_layer_disc
-        )
 
-        self.vgg19 = VGG19(
-            config.VGG_WEIGHTS,
-            feature_mode=True
-        
-        )
+        if architecture == Architecture.MODULAR:
+            self.generator = ModularGenerator(
+                config.NB_CHANNELS_PICTURE, 
+                config.NB_CHANNELS_CARTOON, 
+                config.NB_CHANNELS_1st_HIDDEN_LAYER_GEN, 
+                config.NB_RESNET_BLOCKS
+            )
+            self.discriminator = ModularDiscriminator(
+                config.NB_CHANNELS_CARTOON, 
+                1, 
+                config.NB_CHANNELS_1st_HIDDEN_LAYER_DISC
+            )
+
+            self.vgg19 = VGG19(
+                config.VGG_WEIGHTS,
+                feature_mode=True
+            )
+        elif architecture == Architecture.FIXED:
+            self.generator = FixedGenerator()
+            self.discriminator = FixedDiscriminator()
+        elif architecture == Architecture.UNET:
+            self.generator = UNet()
+            self.discriminator = FixedDiscriminator()
+
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.generator.to(self.device)
@@ -56,6 +62,7 @@ class CartoonGan():
         self.disc_optimizer: Optional[optim.Optimizer] = None
         self.gen_scheduler: Optional[optim.Optimizer] = None
         self.disc_scheduler: Optional[optim.Optimizer] = None
+
 
     def load_model(self, generator_path: str, discriminator_path: str) -> None:
         """Loads the model from path"""
@@ -270,11 +277,3 @@ class CartoonGan():
                 cartoons.extend(self.generator(pictures_batch))
 
         return cartoons
-
-    def __repr__(self) -> str:
-        """Prints the model's architecture"""
-        return f"""-------- Networks ------- \n
-        {networks.print_network(self.generator)}\n
-        {networks.print_network(self.discriminator)}\n
-        {networks.print_network(self.vgg19)}     
-        """
