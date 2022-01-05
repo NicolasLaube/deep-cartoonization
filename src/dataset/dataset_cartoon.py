@@ -4,7 +4,9 @@ from typing import List
 
 from src import config
 from src.dataset.image_loader import ImageLoader
-from src.dataset.utils import Movie
+from src.dataset.parameters import CartoonDatasetParameters
+from src.preprocessing.filters import Filter
+from src.preprocessing.transformations import Transform
 
 
 class CartoonDataset(ImageLoader):
@@ -21,6 +23,13 @@ class CartoonDataset(ImageLoader):
         ImageLoader.__init__(self, csv_path, filter_data, transform)
 
 
-if __name__ == "__main__":
-    loader = CartoonDataset()
-    print(loader[0])
+def init_cartoon_dataset(
+    parameters: CartoonDatasetParameters, train: bool = True
+) -> CartoonDataset:
+    data_filter = Filter(
+        new_size=parameters.new_size,
+        selected_movies=parameters.selected_movies,
+        ratio_filter_mode=parameters.ratio_filter_mode,
+    )
+    transform = Transform(new_size=parameters.new_size, crop_mode=parameters.crop_mode)
+    return CartoonDataset(data_filter, transform, train)

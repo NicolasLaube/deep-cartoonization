@@ -27,6 +27,10 @@ PICTURES_TEST_CSV = os.path.join(DATA_FOLDER, "pictures_test.csv")
 
 
 WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "weights", "pretrained")
+
+LOGS_FOLDER = os.path.join(ROOT_FOLDER, "logs")
+ALL_PARAMS_CSV = os.path.join(LOGS_FOLDER, "all_params.csv")
+
 ####################
 ### About movies ###
 ####################
@@ -48,9 +52,12 @@ MOVIES = [
 VGG_WEIGHTS = os.path.join(ROOT_FOLDER, "weights", "vgg", "vgg19.pth")
 INPUT_CHANNELS = 3
 OUTPUT_CHANNELS = 3
+
 #######################
 ### Training params ###
 #######################
 
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
+NUM_WORKERS = 2
+SAVE_EVERY_MIN = 30

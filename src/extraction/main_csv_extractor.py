@@ -2,10 +2,6 @@ import os
 import pandas as pd
 from PIL import Image
 from src import config
-from src.extraction.train_test_split import (
-    create_train_test_frames,
-    create_train_test_pictures,
-)
 
 
 def extract_frames(movie: str) -> None:
@@ -52,10 +48,3 @@ def create_all_pictures_csv():
     )
     df[["width", "height"]] = df.apply(extract_size, axis=1, result_type="expand")
     df.to_csv(config.PICTURES_ALL_CSV)
-
-
-if __name__ == "__main__":
-    create_all_frames_csv()
-    create_all_pictures_csv()
-    create_train_test_frames()
-    create_train_test_pictures()
