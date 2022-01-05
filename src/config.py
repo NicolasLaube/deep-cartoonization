@@ -9,16 +9,16 @@ ROOT_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
 
 DATA_FOLDER = os.path.join(ROOT_FOLDER, "data")
 
-FRAMES_FOLDER = os.path.join(DATA_FOLDER, "cartoon_frames")
-FRAMES_CSV = os.path.join(DATA_FOLDER, "cartoon_csv")
+CARTOONS_FOLDER = os.path.join(DATA_FOLDER, "cartoon_frames")
+CARTOONS_CSV = os.path.join(DATA_FOLDER, "cartoon_csv")
 
 PICTURES_FOLDER = os.path.join(DATA_FOLDER, "flickr", "Images")
-PICTURES_CSV = os.path.join(DATA_FOLDER, "flickr", "captions.txt")
+PICTURES_CSV = os.path.join(DATA_FOLDER, "flickr", "captions.csv")
 
-FRAMES_ALL_CSV = os.path.join(DATA_FOLDER, "frames_all.csv")
-FRAMES_FILTERED_CSV = os.path.join(DATA_FOLDER, "frames_all.csv")
-FRAMES_TRAIN_CSV = os.path.join(DATA_FOLDER, "frames_train.csv")
-FRAMES_TEST_CSV = os.path.join(DATA_FOLDER, "frames_test.csv")
+CARTOONS_ALL_CSV = os.path.join(DATA_FOLDER, "cartoons_all.csv")
+CARTOONS_FILTERED_CSV = os.path.join(DATA_FOLDER, "cartoons_all.csv")
+CARTOONS_TRAIN_CSV = os.path.join(DATA_FOLDER, "cartoons_train.csv")
+CARTOONS_TEST_CSV = os.path.join(DATA_FOLDER, "cartoons_test.csv")
 
 PICTURES_ALL_CSV = os.path.join(DATA_FOLDER, "pictures_all.csv")
 PICTURES_FILTERED_CSV = os.path.join(DATA_FOLDER, "pictures_all.csv")
@@ -26,7 +26,7 @@ PICTURES_TRAIN_CSV = os.path.join(DATA_FOLDER, "pictures_train.csv")
 PICTURES_TEST_CSV = os.path.join(DATA_FOLDER, "pictures_test.csv")
 
 
-WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "weights", "pretrained")
+WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "weights")
 
 LOGS_FOLDER = os.path.join(ROOT_FOLDER, "logs")
 ALL_PARAMS_CSV = os.path.join(LOGS_FOLDER, "all_params.csv")
@@ -60,4 +60,4 @@ OUTPUT_CHANNELS = 3
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
 NUM_WORKERS = 2
-SAVE_EVERY_MIN = 30
+SAVE_EVERY_MIN = 1

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Tuple, List
 from src import config
 from src.dataset.utils import Movie
@@ -16,8 +16,8 @@ class ImageDatasetParameters:
 
 
 @dataclass
-class CartoonDatasetParameters(ImageDatasetParameters):
-    selected_movies: List[Movie] = config.MOVIES
+class CartoonsDatasetParameters(ImageDatasetParameters):
+    selected_movies: List[Movie] = field(default_factory=lambda: config.MOVIES)
 
 
 PicturesDatasetParameters = ImageDatasetParameters

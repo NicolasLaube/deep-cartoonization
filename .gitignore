@@ -21,3 +21,8 @@ data/**
 !data/flickr/.gitkeep
 weights/*
 !weights/.gitkeep
+!weights/vgg
+weights/vgg/*
+!weights/vgg/.gitkeep
+logs/*
+!logs/all_params.csv

@@ -8,8 +8,8 @@ class CartoonGanModelParameters:
     nb_resnet_blocks: int = 8
     nb_channels_picture: int = 3
     nb_channels_cartoon: int = 3
-    nb_channels_1_h_l_gen: int = 64
-    nb_channels_1_h_l_disc: int = 32
+    nb_channels_1st_hidden_layer_gen: int = 64
+    nb_channels_1st_hidden_layer_disc: int = 32
 
 
 @dataclass

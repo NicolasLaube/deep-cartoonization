@@ -77,9 +77,9 @@ from src.extraction.main_csv_extractor import *
 
 # Extract the data if needed
 
-# create_all_frames_csv()
+# create_all_cartoons_csv()
 # create_all_images_csv()
-# create_train_test_frames()
+# create_train_test_cartoons()
 # create_train_test_images()
 
 from src.preprocessing.filters import Filter
