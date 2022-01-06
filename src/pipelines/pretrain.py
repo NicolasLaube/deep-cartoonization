@@ -55,7 +55,7 @@ Main (pre-)training parameters are defined here.
 It is easier to change some parameters in `.ipynb` file instead of `config.py` while using Google colaboratory.
 """
 
-from src.models.parameters import CartoonGanParameters
+from src.models.networks.utils.parameters import CartoonGanParameters
 
 BATCH_SIZE = 8
 

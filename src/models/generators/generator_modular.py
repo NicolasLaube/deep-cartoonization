@@ -1,14 +1,14 @@
 import torch.nn as nn
 
 
-from src.models.networks.resnet_block import ResnetBlock
-from src.models.networks.utils import initialize_weights
+from src.models.networks.utils.resnet_block import ResnetBlock
+from src.models.networks.utils.initialization import initialize_weights
 
 
-class Generator(nn.Module):
+class ModularGenerator(nn.Module):
     # initializers
     def __init__(self, in_nc, out_nc, nf=32, nb=6):
-        super(Generator, self).__init__()
+        super(ModularGenerator, self).__init__()
         self.input_nc = in_nc
         self.output_nc = out_nc
         self.nf = nf
@@ -55,4 +55,3 @@ class Generator(nn.Module):
         output = self.up_convs(x)
 
         return output
-
