@@ -1,12 +1,12 @@
 import torch.nn as nn
 
-from src.models.networks.utils import initialize_weights
+from src.models.networks.utils.initialization import initialize_weights
 
 
-class Discriminator(nn.Module):
+class ModularDiscriminator(nn.Module):
     # initializers
     def __init__(self, in_nc, out_nc, nf=32):
-        super(Discriminator, self).__init__()
+        super(ModularDiscriminator, self).__init__()
         self.input_nc = in_nc
         self.output_nc = out_nc
         self.nf = nf

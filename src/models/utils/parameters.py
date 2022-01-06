@@ -1,6 +1,7 @@
 from typing import Optional
 from torch.optim import Optimizer
 from dataclasses import dataclass
+import enum
 
 
 @dataclass
@@ -44,3 +45,10 @@ class CartoonGanLossParameters:
     discriminator_loss: float
     generator_loss: float
     conditional_loss: float
+
+
+@dataclass
+class Architecture(enum.Enum):
+    UNET = "UNET architecture"
+    MODULAR = "Modular architecture"
+    FIXED = "Fixed architecture"

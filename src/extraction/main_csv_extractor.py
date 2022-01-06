@@ -1,6 +1,10 @@
 import os
 import pandas as pd
 from PIL import Image
+from tqdm import tqdm
+
+# from tqdm.auto import tqdm  # for notebooks
+
 from src import config
 
 
@@ -29,11 +33,16 @@ def create_all_cartoons_csv():
     """
     Create a csv file with all the cartoons, and information on them
     """
+    # Create new `pandas` methods which use `tqdm` progress
+    tqdm.pandas()
     frames_list = []
     for movie in config.MOVIES:
         frames_list.extend(extract_frames(movie.name))
     df = pd.DataFrame(frames_list)
-    df[["width", "height"]] = df.apply(extract_size, axis=1, result_type="expand")
+    # use progress_apply instead of apply to get progress bar
+    df[["width", "height"]] = df.progress_apply(
+        extract_size, axis=1, result_type="expand"
+    )
     df.to_csv(config.CARTOONS_ALL_CSV)
 
 
@@ -41,10 +50,15 @@ def create_all_pictures_csv():
     """
     Create a csv file with all the flickr pictures, and information on them
     """
+    # Create new `pandas` methods which use `tqdm` progress
+    tqdm.pandas()
     df = pd.read_csv(config.PICTURES_CSV)
     df = df.rename(columns={"image": "name"})
     df["path"] = df["name"].apply(
         lambda name: os.path.join(config.PICTURES_FOLDER, name)
     )
-    df[["width", "height"]] = df.apply(extract_size, axis=1, result_type="expand")
+    # use progress_apply instead of apply to get progress bar
+    df[["width", "height"]] = df.progress_apply(
+        extract_size, axis=1, result_type="expand"
+    )
     df.to_csv(config.PICTURES_ALL_CSV)
