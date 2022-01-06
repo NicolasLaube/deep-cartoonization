@@ -7,11 +7,15 @@ import numpy as np
 from nptyping import NDArray
 from functools import reduce
 from numpy import logical_and
-from typing import Any, Union, List
+from typing import Any, List, Optional
 import torch
 from torch.utils.data import DataLoader
 from src import config
-from src.models.parameters import CartoonGanBaseParameters, CartoonGanModelParameters
+from src.models.utils.parameters import (
+    CartoonGanArchitecture,
+    CartoonGanBaseParameters,
+    CartoonGanModelParameters,
+)
 from src.extraction import *
 from src.dataset.parameters import CartoonsDatasetParameters, PicturesDatasetParameters
 from src.dataset.dataset_cartoon import init_cartoon_dataset
@@ -33,8 +37,9 @@ class CartoonGanProcessor:
         pictures_dataset_parameters: PicturesDatasetParameters,
         training_parameters: CartoonGanBaseParameters,
         pretraining_parameters: CartoonGanBaseParameters = None,
-        cartoon_gan_model_parameters: CartoonGanModelParameters = CartoonGanModelParameters(),
-        init_models_paths: Union[ModelPathsParameters, None] = None,
+        cartoon_gan_architecture: CartoonGanArchitecture = CartoonGanArchitecture.FIXED,
+        cartoon_gan_model_parameters: CartoonGanModelParameters = None,
+        init_models_paths: Optional[ModelPathsParameters] = None,
         nb_images_pictures: int = -1,
         nb_images_cartoons: int = -1,
         extraction: bool = False,
@@ -45,7 +50,12 @@ class CartoonGanProcessor:
         # Init device (CPU/GPU)
         self.__init_device()
         # Init parameters
-        self.cartoon_gan_model_params = cartoon_gan_model_parameters
+        self.cartoon_gan_architecture = cartoon_gan_architecture
+        self.cartoon_gan_model_params = (
+            cartoon_gan_model_parameters
+            if cartoon_gan_model_parameters != None
+            else CartoonGanModelParameters.null_object()
+        )
         self.cartoons_dataset_parameters = cartoons_dataset_parameters
         self.pictures_dataset_parameters = pictures_dataset_parameters
         self.training_params = training_parameters
@@ -148,6 +158,7 @@ class CartoonGanProcessor:
         """To init the logs folder or to load the training model"""
         # Import all fixed params & parameters of all runs
         global_params = {
+            "cartoon_gan_architecture": self.cartoon_gan_architecture.value,
             **CartoonGanProcessor.__format_dataclass(
                 self.cartoon_gan_model_params, "cartoon_gan_model"
             ),
@@ -179,6 +190,12 @@ class CartoonGanProcessor:
         # Check if the model was already created
         checking_df = df_all_params[global_params.keys()] == global_params.values()
         pd.set_option("display.max_rows", None)
+        print("a")
+        print(df_all_params[global_params.keys()])
+        print("b")
+        print(global_params.values())
+        print("c")
+        print(checking_df)
         matching_values = checking_df[
             checking_df.apply(lambda x: reduce(logical_and, x), axis=1)
         ].index.values
@@ -236,7 +253,9 @@ class CartoonGanProcessor:
 
     def __init_gan_model(self) -> None:
         """To init the model we will train"""
-        self.cartoon_gan = CartoonGan(**asdict(self.cartoon_gan_model_params))
+        self.cartoon_gan = CartoonGan(
+            self.cartoon_gan_architecture, self.cartoon_gan_model_params
+        )
 
     #######################################
     ### About (pre)training and testing ###
@@ -300,7 +319,7 @@ class CartoonGanProcessor:
             num_workers=config.NUM_WORKERS,
         )
 
-    def __get_model_to_load(self) -> Union[ModelPathsParameters, None]:
+    def __get_model_to_load(self) -> Optional[ModelPathsParameters]:
         """To load the (pre)trained model"""
 
         def load_model(pretrain):

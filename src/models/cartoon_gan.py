@@ -17,7 +17,7 @@ from src.models.generators.generator_modular import ModularGenerator
 from src.models.discriminators.discriminator_modular import ModularDiscriminator
 from src.models.utils.parameters import (
     CartoonGanParameters,
-    Architecture,
+    CartoonGanArchitecture,
     CartoonGanModelParameters,
     CartoonGanLossParameters,
 )
@@ -30,11 +30,11 @@ from src.models.generators.generator_unet import UNet
 class CartoonGan:
     def __init__(
         self,
-        architecture: Architecture = Architecture.FIXED,
+        architecture: CartoonGanArchitecture = CartoonGanArchitecture.FIXED,
         model_parameters: Optional[CartoonGanModelParameters] = None,
     ) -> None:
 
-        if architecture == Architecture.MODULAR:
+        if architecture == CartoonGanArchitecture.MODULAR:
             self.generator = ModularGenerator(
                 (model_parameters.nb_channels_picture,),
                 (model_parameters.nb_channels_cartoon,),
@@ -46,14 +46,14 @@ class CartoonGan:
                 1,
                 model_parameters.nb_channels_1st_hidden_layer_disc,
             )
-
-            self.vgg19 = VGG19(config.VGG_WEIGHTS, feature_mode=True)
-        elif architecture == Architecture.FIXED:
+        elif architecture == CartoonGanArchitecture.FIXED:
             self.generator = FixedGenerator()
             self.discriminator = FixedDiscriminator()
-        elif architecture == Architecture.UNET:
+        elif architecture == CartoonGanArchitecture.UNET:
             self.generator = UNet()
             self.discriminator = FixedDiscriminator()
+
+        self.vgg19 = VGG19(config.VGG_WEIGHTS, feature_mode=True)
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 

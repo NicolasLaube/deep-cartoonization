@@ -2,8 +2,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-from src.models.networks.utils.initialization import initialize_weights
-from src.models.networks.utils.convolution_3x3 import conv3x3
+from src.models.utils.initialization import initialize_weights
+from src.models.reusable_blocks.convolution_3x3 import conv3x3
+
 
 class ResnetBlock(nn.Module):
     def __init__(self, channel, kernel, stride, padding):
@@ -23,8 +24,7 @@ class ResnetBlock(nn.Module):
         x = F.relu(self.conv1_norm(self.conv1(input)), True)
         x = self.conv2_norm(self.conv2(x))
 
-        return input + x #Elementwise Sum
-
+        return input + x  # Elementwise Sum
 
 
 def add_resblocks(channel_num, nr_blocks):
@@ -39,7 +39,8 @@ class ResBlock(nn.Module):
             nn.BatchNorm2d(channel_num),
             nn.ReLU(inplace=True),
             conv3x3(channel_num, channel_num),
-            nn.BatchNorm2d(channel_num))
+            nn.BatchNorm2d(channel_num),
+        )
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -48,4 +49,3 @@ class ResBlock(nn.Module):
         out += residual
         out = self.relu(out)
         return out
-
