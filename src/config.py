@@ -9,16 +9,16 @@ ROOT_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
 
 DATA_FOLDER = os.path.join(ROOT_FOLDER, "data")
 
-FRAMES_FOLDER = os.path.join(DATA_FOLDER, "cartoon_frames")
-FRAMES_CSV = os.path.join(DATA_FOLDER, "cartoon_csv")
+CARTOONS_FOLDER = os.path.join(DATA_FOLDER, "cartoon_frames")
+CARTOONS_CSV = os.path.join(DATA_FOLDER, "cartoon_csv")
 
 PICTURES_FOLDER = os.path.join(DATA_FOLDER, "flickr", "Images")
 PICTURES_CSV = os.path.join(DATA_FOLDER, "flickr", "captions.csv")
 
-FRAMES_ALL_CSV = os.path.join(DATA_FOLDER, "frames_all.csv")
-FRAMES_FILTERED_CSV = os.path.join(DATA_FOLDER, "frames_all.csv")
-FRAMES_TRAIN_CSV = os.path.join(DATA_FOLDER, "frames_train.csv")
-FRAMES_TEST_CSV = os.path.join(DATA_FOLDER, "frames_test.csv")
+CARTOONS_ALL_CSV = os.path.join(DATA_FOLDER, "cartoons_all.csv")
+CARTOONS_FILTERED_CSV = os.path.join(DATA_FOLDER, "cartoons_all.csv")
+CARTOONS_TRAIN_CSV = os.path.join(DATA_FOLDER, "cartoons_train.csv")
+CARTOONS_TEST_CSV = os.path.join(DATA_FOLDER, "cartoons_test.csv")
 
 PICTURES_ALL_CSV = os.path.join(DATA_FOLDER, "pictures_all.csv")
 PICTURES_FILTERED_CSV = os.path.join(DATA_FOLDER, "pictures_all.csv")
@@ -26,7 +26,11 @@ PICTURES_TRAIN_CSV = os.path.join(DATA_FOLDER, "pictures_train.csv")
 PICTURES_TEST_CSV = os.path.join(DATA_FOLDER, "pictures_test.csv")
 
 
-WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "weights", "pretrained")
+WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "weights")
+
+LOGS_FOLDER = os.path.join(ROOT_FOLDER, "logs")
+ALL_PARAMS_CSV = os.path.join(LOGS_FOLDER, "all_params.csv")
+
 ####################
 ### About movies ###
 ####################
@@ -48,18 +52,12 @@ MOVIES = [
 VGG_WEIGHTS = os.path.join(ROOT_FOLDER, "weights", "vgg", "vgg19.pth")
 INPUT_CHANNELS = 3
 OUTPUT_CHANNELS = 3
+
 #######################
 ### Training params ###
 #######################
 
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
-
-
-## NETWORK ARCHITECTURE
-
-NB_RESNET_BLOCKS = (8,)
-NB_CHANNELS_PICTURE = (3,)
-NB_CHANNELS_CARTOON = (3,)
-NB_CHANNELS_1st_HIDDEN_LAYER_GEN = (64,)
-NB_CHANNELS_1st_HIDDEN_LAYER_DISC = 32
+NUM_WORKERS = 2
+SAVE_EVERY_MIN = 15

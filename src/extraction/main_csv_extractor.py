@@ -6,17 +6,13 @@ from tqdm import tqdm
 # from tqdm.auto import tqdm  # for notebooks
 
 from src import config
-from src.extraction.train_test_split import (
-    create_train_test_frames,
-    create_train_test_pictures,
-)
 
 
 def extract_frames(movie: str) -> None:
     """
     Extract information about all frames of a specific movie.
     """
-    folder_path = os.path.join(config.FRAMES_FOLDER, movie)
+    folder_path = os.path.join(config.CARTOONS_FOLDER, movie)
     frames_movie = [
         {"movie": movie, "name": frame, "path": os.path.join(folder_path, frame)}
         for frame in os.listdir(folder_path)
@@ -33,9 +29,9 @@ def extract_size(row):
     return image.size
 
 
-def create_all_frames_csv():
+def create_all_cartoons_csv():
     """
-    Create a csv file with all the frames, and information on them
+    Create a csv file with all the cartoons, and information on them
     """
     # Create new `pandas` methods which use `tqdm` progress
     tqdm.pandas()
@@ -47,7 +43,7 @@ def create_all_frames_csv():
     df[["width", "height"]] = df.progress_apply(
         extract_size, axis=1, result_type="expand"
     )
-    df.to_csv(config.FRAMES_ALL_CSV)
+    df.to_csv(config.CARTOONS_ALL_CSV)
 
 
 def create_all_pictures_csv():
@@ -66,10 +62,3 @@ def create_all_pictures_csv():
         extract_size, axis=1, result_type="expand"
     )
     df.to_csv(config.PICTURES_ALL_CSV)
-
-
-if __name__ == "__main__":
-    create_all_frames_csv()
-    create_all_pictures_csv()
-    create_train_test_frames()
-    create_train_test_pictures()

@@ -55,7 +55,7 @@ Main (pre-)training parameters are defined here.
 It is easier to change some parameters in `.ipynb` file instead of `config.py` while using Google colaboratory.
 """
 
-from src.models.networks.utils.parameters import CartoonGanParameters
+from src.models.utils.parameters import CartoonGanParameters
 
 BATCH_SIZE = 8
 
@@ -77,9 +77,9 @@ from src.extraction.main_csv_extractor import *
 
 # Extract the data if needed
 
-# create_all_frames_csv()
+# create_all_cartoons_csv()
 # create_all_images_csv()
-# create_train_test_frames()
+# create_train_test_cartoons()
 # create_train_test_images()
 
 from src.preprocessing.filters import Filter

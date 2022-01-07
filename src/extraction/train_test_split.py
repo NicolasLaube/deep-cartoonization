@@ -3,22 +3,22 @@ from sklearn.model_selection import train_test_split
 from src import config
 
 
-def create_train_test_frames():
+def create_train_test_cartoons():
     """
-    Create and save a train and a test file for frames
+    Create and save a train and a test file for cartoons
     """
-    df_frames = pd.read_csv(config.FRAMES_FILTERED_CSV, index_col=0)
+    df_cartoons = pd.read_csv(config.CARTOONS_FILTERED_CSV, index_col=0)
     train, test = train_test_split(
-        df_frames,
+        df_cartoons,
         test_size=config.TEST_SIZE,
         random_state=config.RANDOM_STATE,
         shuffle=True,
-        stratify=df_frames["movie"],
+        stratify=df_cartoons["movie"],
     )
     train = train.reset_index(drop=True)
     test = test.reset_index(drop=True)
-    train.to_csv(config.FRAMES_TRAIN_CSV)
-    test.to_csv(config.FRAMES_TEST_CSV)
+    train.to_csv(config.CARTOONS_TRAIN_CSV)
+    test.to_csv(config.CARTOONS_TEST_CSV)
 
 
 def create_train_test_pictures():
@@ -39,5 +39,5 @@ def create_train_test_pictures():
 
 
 if __name__ == "__main__":
-    create_train_test_frames()
+    create_train_test_cartoons()
     create_train_test_pictures()
