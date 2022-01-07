@@ -33,28 +33,11 @@ class CartoonGan(Trainer):
         self,
         architecture: CartoonGanArchitecture = CartoonGanArchitecture.FIXED,
         model_parameters: Optional[CartoonGanModelParameters] = None,
+        *args,
+        **kargs,
     ) -> None:
 
-        Trainer.__init__()
-
-        if architecture == CartoonGanArchitecture.MODULAR:
-            self.generator = ModularGenerator(
-                (model_parameters.nb_channels_picture,),
-                (model_parameters.nb_channels_cartoon,),
-                (model_parameters.nb_channels_1st_hidden_layer_gen,),
-                (model_parameters.nb_resnet_blocks,),
-            )
-            self.discriminator = ModularDiscriminator(
-                (model_parameters.nb_channels_cartoon,),
-                1,
-                model_parameters.nb_channels_1st_hidden_layer_disc,
-            )
-        elif architecture == CartoonGanArchitecture.FIXED:
-            self.generator = FixedGenerator()
-            self.discriminator = FixedDiscriminator()
-        elif architecture == CartoonGanArchitecture.UNET:
-            self.generator = UNet()
-            self.discriminator = FixedDiscriminator()
+        Trainer.__init__(*args, **kargs)
 
         self.vgg19 = VGG19(config.VGG_WEIGHTS, feature_mode=True)
 
@@ -68,20 +51,11 @@ class CartoonGan(Trainer):
         self.gen_scheduler: Optional[optim.Optimizer] = None
         self.disc_scheduler: Optional[optim.Optimizer] = None
 
-    def load_model(self, generator_path: str, discriminator_path: str) -> None:
-        """Loads the model from path"""
-        if torch.cuda.is_available():
-            self.discriminator.load_state_dict(torch.load(discriminator_path))
-            self.generator.load_state_dict(torch.load(generator_path))
-        else:
-            self.discriminator.load_state_dict(
-                torch.load(
-                    discriminator_path, map_location=lambda storage, loc: storage
-                )
-            )
-            self.generator.load_state_dict(
-                torch.load(generator_path, map_location=lambda storage, loc: storage)
-            )
+    def __load_discriminator(self) -> nn.Module:
+        return FixedDiscriminator()
+
+    def __load_generator(self) -> nn.Module:
+        return FixedGenerator()
 
     def __load_optimizers(self, parameters: CartoonGanParameters):
         """Load optimizers"""
@@ -193,10 +167,6 @@ class CartoonGan(Trainer):
         first_epoch_index: int = 0,
     ) -> CartoonGanLossParameters:
         """Train function"""
-
-        assert len(cartoons_loader) == len(
-            pictures_loader
-        ), "Lengths should be identical"
 
         saved_weights_path = (
             saved_weights_path if saved_weights_path != None else config.WEIGHTS_FOLDER
@@ -322,22 +292,25 @@ class CartoonGan(Trainer):
                 "conditional_loss": torch.mean(torch.FloatTensor(conditional_losses)),
             }
 
-    def save_model(self, generator_path: str, discriminator_path: str) -> None:
-        """Save a model"""
-        torch.save(self.generator.state_dict(), generator_path)
-        torch.save(self.discriminator.state_dict(), discriminator_path)
 
-    def cartoonize_dataset(
-        self, pictures_loader: DataLoader, nb_images: int = -1
-    ) -> List[NDArray[(3, Any, Any), np.int32]]:
-        """Cartoonize pictures"""
-        cartoons = []
-        with torch.no_grad():
-            self.generator.eval()
-            for pictures_batch in tqdm(pictures_loader):
-                pictures_batch = pictures_batch.to(self.device)
-                cartoons.extend(self.generator(pictures_batch))
-                if nb_images >= 0 and len(cartoons) >= nb_images:
-                    break
+"""
+def __load_architecture(self, architecture):
+        Load GAN architecure
 
-        return cartoons
+        if architecture == CartoonGanArchitecture.MODULAR:
+            return ModularDiscriminator(
+                (self.model_parameters.nb_channels_cartoon,),
+                1,
+                self.model_parameters.nb_channels_1st_hidden_layer_disc,
+            ), ModularGenerator(
+                (self.model_parameters.nb_channels_picture,),
+                (self.model_parameters.nb_channels_cartoon,),
+                (self.model_parameters.nb_channels_1st_hidden_layer_gen,),
+                (self.model_parameters.nb_resnet_blocks,),
+            )
+
+        if architecture == CartoonGanArchitecture.FIXED:
+            return FixedDiscriminator(), FixedGenerator()
+
+        return FixedDiscriminator(), UNet()
+"""
