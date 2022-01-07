@@ -1,4 +1,5 @@
 import os
+import sys
 from dataclasses import asdict, dataclass, replace
 import logging
 from datetime import datetime
@@ -47,8 +48,6 @@ class CartoonGanProcessor:
         # Extract all the information about the images if necessary
         if extraction:
             self.__extract_images()
-        # Init device (CPU/GPU)
-        self.__init_device()
         # Init parameters
         self.cartoon_gan_architecture = cartoon_gan_architecture
         self.cartoon_gan_model_params = (
@@ -73,6 +72,8 @@ class CartoonGanProcessor:
         self.nb_images_cartoons = nb_images_cartoons
         # Init logs
         self.__init_logs()
+        # Init device (CPU/GPU)
+        self.__init_device()
         # Init gan model
         self.__init_gan_model()
 
@@ -144,16 +145,6 @@ class CartoonGanProcessor:
         create_train_test_pictures()
         print("Pictures and cartoons extracted")
 
-    def __init_device(self) -> None:
-        """To find the GPU if it exists"""
-        cuda = torch.cuda.is_available()
-        if cuda:
-            print("Nvidia card available, running on GPU")
-            print(torch.cuda.get_device_name(0))
-        else:
-            print("Nvidia card unavailable, running on CPU")
-        self.device = "cuda" if cuda else "cpu"
-
     def __init_logs(self):
         """To init the logs folder or to load the training model"""
         # Import all fixed params & parameters of all runs
@@ -189,13 +180,6 @@ class CartoonGanProcessor:
         }
         # Check if the model was already created
         checking_df = df_all_params[global_params.keys()] == global_params.values()
-        pd.set_option("display.max_rows", None)
-        print("a")
-        print(df_all_params[global_params.keys()])
-        print("b")
-        print(global_params.values())
-        print("c")
-        print(checking_df)
         matching_values = checking_df[
             checking_df.apply(lambda x: reduce(logical_and, x), axis=1)
         ].index.values
@@ -215,6 +199,7 @@ class CartoonGanProcessor:
             datefmt="%H:%M:%S",
             level=logging.DEBUG,
         )
+        logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
     def __import_logs(self, params):
         # Load the parameters
@@ -250,6 +235,16 @@ class CartoonGanProcessor:
         self.weights_path = os.path.join(config.WEIGHTS_FOLDER, self.params["run_id"])
         os.mkdir(self.folder_path)
         os.mkdir(self.weights_path)
+
+    def __init_device(self) -> None:
+        """To find the GPU if it exists"""
+        cuda = torch.cuda.is_available()
+        if cuda:
+            logging.info("Nvidia card available, running on GPU")
+            logging.info(torch.cuda.get_device_name(0))
+        else:
+            logging.info("Nvidia card unavailable, running on CPU")
+        self.device = "cuda" if cuda else "cpu"
 
     def __init_gan_model(self) -> None:
         """To init the model we will train"""
@@ -363,9 +358,9 @@ class CartoonGanProcessor:
                 if self.init_models_paths.generator_path != None:
                     model = asdict(self.init_models_paths)
         if model == None:
-            print("No model found")
+            logging.info("No model found")
         else:
-            print("Model found: ", model)
+            logging.info("Model found: ", model)
         return model
 
     #############
