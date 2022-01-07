@@ -13,6 +13,7 @@ class ImageDatasetParameters:
         ratio_filter.RatioFilterMode.NO_FILTER.value
     )
     crop_mode: resize.CropModes = resize.CropMode.RESIZE.value
+    nb_images: int = -1
 
 
 @dataclass
@@ -20,4 +21,5 @@ class CartoonsDatasetParameters(ImageDatasetParameters):
     selected_movies: List[Movie] = field(default_factory=lambda: config.MOVIES)
 
 
+# No additional parameters required for pictures parameters
 PicturesDatasetParameters = ImageDatasetParameters

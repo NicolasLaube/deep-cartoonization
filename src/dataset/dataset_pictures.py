@@ -26,7 +26,7 @@ class PicturesDataset(ImageLoader):
 
 
 def init_pictures_dataset(
-    parameters: PicturesDatasetParameters, nb_images: int = -1, train: bool = True
+    parameters: PicturesDatasetParameters, train: bool = True
 ) -> PicturesDataset:
     data_filter = Filter(
         new_size=parameters.new_size, ratio_filter_mode=parameters.ratio_filter_mode
@@ -35,6 +35,6 @@ def init_pictures_dataset(
     return PicturesDataset(
         data_filter.picture_filter,
         transform.picture_transform,
-        nb_images,
+        parameters.nb_images,
         train,
     )

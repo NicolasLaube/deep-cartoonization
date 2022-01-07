@@ -28,7 +28,7 @@ class CartoonDataset(ImageLoader):
 
 
 def init_cartoon_dataset(
-    parameters: CartoonsDatasetParameters, nb_images: int = -1, train: bool = True
+    parameters: CartoonsDatasetParameters, train: bool = True
 ) -> CartoonDataset:
     data_filter = Filter(
         new_size=parameters.new_size,
@@ -39,6 +39,6 @@ def init_cartoon_dataset(
     return CartoonDataset(
         data_filter.cartoon_filter,
         transform.cartoon_transform,
-        nb_images,
+        parameters.nb_images,
         train,
     )

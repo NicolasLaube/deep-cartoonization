@@ -25,14 +25,17 @@ from src.models.utils.vgg19 import VGG19
 from src.models.generators.generator_fixed import FixedGenerator
 from src.models.discriminators.discriminator_fixed import FixedDiscriminator
 from src.models.generators.generator_unet import UNet
+from src.pipelines.trainer import Trainer
 
 
-class CartoonGan:
+class CartoonGan(Trainer):
     def __init__(
         self,
         architecture: CartoonGanArchitecture = CartoonGanArchitecture.FIXED,
         model_parameters: Optional[CartoonGanModelParameters] = None,
     ) -> None:
+
+        Trainer.__init__()
 
         if architecture == CartoonGanArchitecture.MODULAR:
             self.generator = ModularGenerator(
@@ -54,8 +57,6 @@ class CartoonGan:
             self.discriminator = FixedDiscriminator()
 
         self.vgg19 = VGG19(config.VGG_WEIGHTS, feature_mode=True)
-
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self.generator.to(self.device)
         self.discriminator.to(self.device)

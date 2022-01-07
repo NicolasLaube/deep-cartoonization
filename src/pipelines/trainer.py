@@ -1,3 +1,4 @@
+from abc import abstractmethod
 import os
 import sys
 from dataclasses import asdict, dataclass, replace
@@ -30,7 +31,7 @@ class ModelPathsParameters:
     discriminator_path: str
 
 
-class CartoonGanProcessor:
+class Trainer:
     def __init__(
         self,
         *,
@@ -41,13 +42,7 @@ class CartoonGanProcessor:
         cartoon_gan_architecture: CartoonGanArchitecture = CartoonGanArchitecture.FIXED,
         cartoon_gan_model_parameters: CartoonGanModelParameters = None,
         init_models_paths: Optional[ModelPathsParameters] = None,
-        nb_images_pictures: int = -1,
-        nb_images_cartoons: int = -1,
-        extraction: bool = False,
     ):
-        # Extract all the information about the images if necessary
-        if extraction:
-            self.__extract_images()
         # Init parameters
         self.cartoon_gan_architecture = cartoon_gan_architecture
         self.cartoon_gan_model_params = (
@@ -73,7 +68,7 @@ class CartoonGanProcessor:
         # Init logs
         self.__init_logs()
         # Init device (CPU/GPU)
-        self.__init_device()
+        self.device = self.__init_device()
         # Init gan model
         self.__init_gan_model()
 
@@ -119,6 +114,14 @@ class CartoonGanProcessor:
         self.params["train_conditional_loss"] = losses["conditional_loss"]
         self.__save_params()
 
+    @abstractmethod
+    def __train(self):
+        pass
+
+    @abstractmethod
+    def __pretrain(self):
+        pass
+
     def cartoonize_images(
         self, nb_images: int = -1
     ) -> List[NDArray[(3, Any, Any), np.int32]]:
@@ -137,33 +140,23 @@ class CartoonGanProcessor:
     ### About inits ###
     ###################
 
-    def __extract_images(self) -> None:
-        """To build dataframes with all cartoons and all pictures, and divide it into a train and a test dataset"""
-        create_all_cartoons_csv()
-        create_all_pictures_csv()
-        create_train_test_cartoons()
-        create_train_test_pictures()
-        print("Pictures and cartoons extracted")
-
     def __init_logs(self):
         """To init the logs folder or to load the training model"""
         # Import all fixed params & parameters of all runs
         global_params = {
             "cartoon_gan_architecture": self.cartoon_gan_architecture.value,
-            **CartoonGanProcessor.__format_dataclass(
+            **Trainer.__format_dataclass(
                 self.cartoon_gan_model_params, "cartoon_gan_model"
             ),
-            **CartoonGanProcessor.__format_dataclass(
+            **Trainer.__format_dataclass(
                 self.cartoons_dataset_parameters, "cartoon_dataset"
             ),
-            **CartoonGanProcessor.__format_dataclass(
+            **Trainer.__format_dataclass(
                 self.pictures_dataset_parameters, "pictures_dataset"
             ),
-            **CartoonGanProcessor.__format_dataclass(
-                self.pretraining_params, "pretraining"
-            ),
-            **CartoonGanProcessor.__format_dataclass(self.training_params, "training"),
-            **CartoonGanProcessor.__format_dataclass(self.init_models_paths, "init"),
+            **Trainer.__format_dataclass(self.pretraining_params, "pretraining"),
+            **Trainer.__format_dataclass(self.training_params, "training"),
+            **Trainer.__format_dataclass(self.init_models_paths, "init"),
         }
         df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
         # Format some fields so they can be comparable with the ones from the csv file
@@ -236,7 +229,7 @@ class CartoonGanProcessor:
         os.mkdir(self.folder_path)
         os.mkdir(self.weights_path)
 
-    def __init_device(self) -> None:
+    def __init_device(self) -> str:
         """To find the GPU if it exists"""
         cuda = torch.cuda.is_available()
         if cuda:
@@ -244,7 +237,7 @@ class CartoonGanProcessor:
             logging.info(torch.cuda.get_device_name(0))
         else:
             logging.info("Nvidia card unavailable, running on CPU")
-        self.device = "cuda" if cuda else "cpu"
+        return "cuda" if cuda else "cpu"
 
     def __init_gan_model(self) -> None:
         """To init the model we will train"""
