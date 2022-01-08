@@ -120,9 +120,6 @@ class FixedCartoonGan(Trainer):
         l1_loss = nn.L1Loss().to(self.device)
         bce_loss = nn.BCELoss().to(self.device)
 
-        self.vgg19.eval()
-        last_save_time = datetime.now()
-
         real = torch.ones(
             cartoons_loader.batch_size,
             1,
@@ -140,13 +137,9 @@ class FixedCartoonGan(Trainer):
             logging.info("Epoch %s/%s", epoch, train_params.epochs)
 
             epoch_start_time = time()
-            self.generator.train()
 
             self.gen_scheduler.step()
             self.disc_scheduler.step()
-            disc_losses = []
-            gen_losses = []
-            conditional_losses = []
 
             for picture_batch, cartoon_batch in tqdm(
                 zip(pictures_loader, cartoons_loader), total=len(pictures_loader)
@@ -174,7 +167,6 @@ class FixedCartoonGan(Trainer):
                 disc_loss = (
                     disc_fake_cartoon_loss + disc_real_cartoon_loss
                 )  # + disc_edged_cartoon_loss
-                disc_losses.append(disc_loss.item())
 
                 disc_loss.backward()
                 self.disc_optimizer.step()
@@ -188,71 +180,31 @@ class FixedCartoonGan(Trainer):
 
                 picture_features = self.vgg19((picture_batch + 1) / 2)
                 cartoon_features = self.vgg19((generated_image + 1) / 2)
+
                 conditionnal_loss = train_params.conditional_lambda * l1_loss(
                     cartoon_features, picture_features.detach()
                 )
 
                 gen_loss = disc_fake_loss + conditionnal_loss
-                gen_losses.append(disc_fake_loss.item())
-
-                conditional_losses.append(conditionnal_loss.item())
 
                 gen_loss.backward()
                 self.gen_optimizer.step()
 
-                if (
-                    (datetime.now() - last_save_time).seconds / 60
-                ) > config.SAVE_EVERY_MIN:
-                    # reset time
-                    last_save_time = datetime.now()
-                    # save all n minutes
-                    self.save_model(
-                        os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
-                        os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
-                    )
+                self.__save_loss(
+                    step=epoch,
+                    cond_loss=conditionnal_loss,
+                    disc_loss=disc_loss,
+                    gen_loss=gen_loss,
+                )
+
+                self.__save_weights(
+                    os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
+                    os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
+                )
+
             self.save_model(
                 os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
                 os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
             )
 
             per_epoch_time = time() - epoch_start_time
-
-            logging.info(
-                "[%d/%d] - time: %.2f, Disc loss: %.3f, Gen loss: %.3f, Con loss: %.3f"
-                % (
-                    (epoch + 1),
-                    weights_folder.epochs,
-                    per_epoch_time,
-                    torch.mean(torch.FloatTensor(disc_losses)),
-                    torch.mean(torch.FloatTensor(gen_losses)),
-                    torch.mean(torch.FloatTensor(conditional_losses)),
-                )
-            )
-            return {
-                "discriminator_loss": torch.mean(torch.FloatTensor(disc_losses)),
-                "generator_loss": torch.mean(torch.FloatTensor(gen_losses)),
-                "conditional_loss": torch.mean(torch.FloatTensor(conditional_losses)),
-            }
-
-
-"""
-def __load_architecture(self, architecture):
-        Load GAN architecure
-
-        if architecture == CartoonGanArchitecture.MODULAR:
-            return ModularDiscriminator(
-                (self.model_parameters.nb_channels_cartoon,),
-                1,
-                self.model_parameters.nb_channels_1st_hidden_layer_disc,
-            ), ModularGenerator(
-                (self.model_parameters.nb_channels_picture,),
-                (self.model_parameters.nb_channels_cartoon,),
-                (self.model_parameters.nb_channels_1st_hidden_layer_gen,),
-                (self.model_parameters.nb_resnet_blocks,),
-            )
-
-        if architecture == CartoonGanArchitecture.FIXED:
-            return FixedDiscriminator(), FixedGenerator()
-
-        return FixedDiscriminator(), UNet()
-"""

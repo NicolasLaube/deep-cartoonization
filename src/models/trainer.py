@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 import torch
 from torch._C import device
 from torch.utils.data.dataloader import DataLoader
@@ -7,6 +8,9 @@ import torch.optim as optim
 from typing import Optional
 from src.models.utils.params_trainer import TrainerParams
 from src import config
+from torch.utils.tensorboard import SummaryWriter
+
+writer = SummaryWriter()
 
 
 def assertsize(func):
@@ -23,6 +27,7 @@ class Trainer(ABC):
         self.architecture_params = architecture_params
         self.generator = self.__load_generator()
         self.discriminator = self.__load_discriminator()
+        self.writer = SummaryWriter()
 
         self.generator.to(device)
         self.discriminator.to(device)
@@ -86,6 +91,18 @@ class Trainer(ABC):
     @abstractmethod
     def __load_discriminator(self) -> nn.Module:
         pass
+
+    def __save_loss(self, step: int, **kargs):
+        for key, loss in kargs:
+            self.writer.add_scalar(key, loss, global_step=step)
+
+    def __init_timer(self):
+        self.last_save = datetime.now()
+
+    def __save_weights(self, gen_path, disc_path):
+        if ((datetime.now() - self.last_save).seconds / 60) > config.SAVE_EVERY_MIN:
+            self.last_save = datetime.now()
+            self.save_model(gen_path, disc_path)
 
     def __set_train_mode(self):
         """Set model to train mode"""
