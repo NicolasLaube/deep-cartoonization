@@ -13,43 +13,23 @@ from datetime import datetime
 
 from src import config
 
-from src.models.generators.generator_modular import ModularGenerator
-from src.models.discriminators.discriminator_modular import ModularDiscriminator
-from src.models.utils.parameters import (
-    CartoonGanParameters,
-    CartoonGanArchitecture,
-    CartoonGanModelParameters,
-    CartoonGanLossParameters,
-)
+from src.models.utils.params_trainer import TrainerParams
 from src.models.utils.vgg19 import VGG19
 from src.models.generators.generator_fixed import FixedGenerator
 from src.models.discriminators.discriminator_fixed import FixedDiscriminator
-from src.models.generators.generator_unet import UNet
-from src.pipelines.trainer import Trainer
+from src.models.trainer import Trainer
 
 
-class CartoonGan(Trainer):
+class FixedCartoonGan(Trainer):
     def __init__(
         self,
-        architecture: CartoonGanArchitecture = CartoonGanArchitecture.FIXED,
-        model_parameters: Optional[CartoonGanModelParameters] = None,
         *args,
         **kargs,
     ) -> None:
-
         Trainer.__init__(*args, **kargs)
-
         self.vgg19 = VGG19(config.VGG_WEIGHTS, feature_mode=True)
-
-        self.generator.to(self.device)
-        self.discriminator.to(self.device)
         self.vgg19.to(self.device)
-
-        # initialize other variables
-        self.gen_optimizer: Optional[optim.Optimizer] = None
-        self.disc_optimizer: Optional[optim.Optimizer] = None
-        self.gen_scheduler: Optional[optim.Optimizer] = None
-        self.disc_scheduler: Optional[optim.Optimizer] = None
+        self.vgg19.eval()
 
     def __load_discriminator(self) -> nn.Module:
         return FixedDiscriminator()
@@ -57,57 +37,25 @@ class CartoonGan(Trainer):
     def __load_generator(self) -> nn.Module:
         return FixedGenerator()
 
-    def __load_optimizers(self, parameters: CartoonGanParameters):
-        """Load optimizers"""
-        self.gen_optimizer = optim.Adam(
-            self.generator.parameters(),
-            lr=parameters.gen_lr,
-            betas=(parameters.gen_beta1, parameters.gen_beta2),
-        )
-        self.disc_optimizer = optim.Adam(
-            self.discriminator.parameters(),
-            lr=parameters.disc_lr,
-            betas=(parameters.disc_beta1, parameters.disc_beta2),
-        )
-        self.gen_scheduler = optim.lr_scheduler.MultiStepLR(
-            optimizer=self.gen_optimizer,
-            milestones=[parameters.epochs // 2, parameters.epochs // 4 * 3],
-            gamma=0.1,
-        )
-        self.disc_scheduler = optim.lr_scheduler.MultiStepLR(
-            optimizer=self.disc_optimizer,
-            milestones=[parameters.epochs // 2, parameters.epochs // 4 * 3],
-            gamma=0.1,
-        )
-
-    def __set_train_mode(self):
-        """Set model to train mode"""
-        self.generator.train()
-        self.discriminator.train()
-        # vgg19 isn't trained
-        self.vgg19.eval()
-
     def pretrain(
         self,
+        *,
         pictures_loader: DataLoader,
-        parameters: CartoonGanParameters,
-        saved_weights_path: str = None,
-        first_epoch_index: int = 0,
+        batch_callback: callable,
+        pretrain_params: TrainerParams,
+        epoch_start: int = 0,
+        weights_folder: Optional[str] = config.WEIGHTS_FOLDER,
     ) -> float:
-        saved_weights_path = (
-            saved_weights_path if saved_weights_path != None else config.WEIGHTS_FOLDER
-        )
-
         """Pretrains model"""
-        self.__load_optimizers(parameters)
+        self.__init_optimizers(pretrain_params)
         self.__set_train_mode()
 
         l1_loss = nn.L1Loss().to(self.device)
 
         last_save_time = datetime.now()
 
-        for epoch in range(first_epoch_index, parameters.epochs + first_epoch_index):
-            logging.info("Epoch %s/%s", epoch, parameters.epochs)
+        for epoch in range(epoch_start, pretrain_params.epochs + epoch_start):
+            logging.info("Epoch %s/%s", epoch, pretrain_params.epochs)
             epoch_start_time = time()
             reconstruction_losses = []
             for picture_batch in tqdm(pictures_loader):
@@ -135,14 +83,12 @@ class CartoonGan(Trainer):
                     last_save_time = datetime.now()
                     # save all n minutes
                     self.save_model(
-                        os.path.join(saved_weights_path, f"pretrained_gen_{epoch}.pkl"),
-                        os.path.join(
-                            saved_weights_path, f"pretrained_disc_{epoch}.pkl"
-                        ),
+                        os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
+                        os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
                     )
             self.save_model(
-                os.path.join(saved_weights_path, f"pretrained_gen_{epoch}.pkl"),
-                os.path.join(saved_weights_path, f"pretrained_disc_{epoch}.pkl"),
+                os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
+                os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
             )
             per_epoch_time = time() - epoch_start_time
 
@@ -150,7 +96,7 @@ class CartoonGan(Trainer):
                 "[%d/%d] - time: %.2f, Recon loss: %.3f"
                 % (
                     (epoch + 1),
-                    parameters.epochs,
+                    pretrain_params.epochs,
                     per_epoch_time,
                     torch.mean(torch.FloatTensor(reconstruction_losses)),
                 )
@@ -160,19 +106,15 @@ class CartoonGan(Trainer):
     def train(
         self,
         *,
-        cartoons_loader: DataLoader,
         pictures_loader: DataLoader,
-        parameters: CartoonGanParameters,
-        saved_weights_path: str = None,
-        first_epoch_index: int = 0,
-    ) -> CartoonGanLossParameters:
+        cartoons_loader: DataLoader,
+        batch_callback: callable,
+        train_params: TrainerParams,
+        epoch_start: int = 0,
+        weights_folder: Optional[str] = None,
+    ) -> None:
         """Train function"""
-
-        saved_weights_path = (
-            saved_weights_path if saved_weights_path != None else config.WEIGHTS_FOLDER
-        )
-
-        self.__load_optimizers(parameters)
+        self.__init_optimizers(train_params)
         self.__set_train_mode()
 
         l1_loss = nn.L1Loss().to(self.device)
@@ -184,18 +126,18 @@ class CartoonGan(Trainer):
         real = torch.ones(
             cartoons_loader.batch_size,
             1,
-            parameters.input_size // 4,
-            parameters.input_size // 4,
+            train_params.input_size // 4,
+            train_params.input_size // 4,
         ).to(self.device)
         fake = torch.zeros(
             cartoons_loader.batch_size,
             1,
-            parameters.input_size // 4,
-            parameters.input_size // 4,
+            train_params.input_size // 4,
+            train_params.input_size // 4,
         ).to(self.device)
 
-        for epoch in range(first_epoch_index, parameters.epochs + first_epoch_index):
-            logging.info("Epoch %s/%s", epoch, parameters.epochs)
+        for epoch in range(epoch_start, train_params.epochs + epoch_start):
+            logging.info("Epoch %s/%s", epoch, train_params.epochs)
 
             epoch_start_time = time()
             self.generator.train()
@@ -246,7 +188,7 @@ class CartoonGan(Trainer):
 
                 picture_features = self.vgg19((picture_batch + 1) / 2)
                 cartoon_features = self.vgg19((generated_image + 1) / 2)
-                conditionnal_loss = parameters.conditional_lambda * l1_loss(
+                conditionnal_loss = train_params.conditional_lambda * l1_loss(
                     cartoon_features, picture_features.detach()
                 )
 
@@ -265,12 +207,12 @@ class CartoonGan(Trainer):
                     last_save_time = datetime.now()
                     # save all n minutes
                     self.save_model(
-                        os.path.join(saved_weights_path, f"trained_gen_{epoch}.pkl"),
-                        os.path.join(saved_weights_path, f"trained_disc_{epoch}.pkl"),
+                        os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
+                        os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
                     )
             self.save_model(
-                os.path.join(saved_weights_path, f"trained_gen_{epoch}.pkl"),
-                os.path.join(saved_weights_path, f"trained_disc_{epoch}.pkl"),
+                os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
+                os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
             )
 
             per_epoch_time = time() - epoch_start_time
@@ -279,7 +221,7 @@ class CartoonGan(Trainer):
                 "[%d/%d] - time: %.2f, Disc loss: %.3f, Gen loss: %.3f, Con loss: %.3f"
                 % (
                     (epoch + 1),
-                    parameters.epochs,
+                    weights_folder.epochs,
                     per_epoch_time,
                     torch.mean(torch.FloatTensor(disc_losses)),
                     torch.mean(torch.FloatTensor(gen_losses)),

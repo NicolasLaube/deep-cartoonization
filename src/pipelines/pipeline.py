@@ -14,17 +14,19 @@ from typing import Any, Dict, List, Optional
 import torch
 from torch.utils.data import DataLoader
 from src import config
-from src.models.utils.parameters import (
-    CartoonGanBaseParameters,
-    CartoonGanModelParameters,
-    NULLArhcitectureParams,
-)
+from src.models.utils.params_trainer import TrainerParams
 from src.extraction import *
 from src.dataset.parameters import CartoonsDatasetParameters, PicturesDatasetParameters
 from src.dataset.dataset_cartoon import init_cartoon_dataset
 from src.dataset.dataset_pictures import init_pictures_dataset
-from src.pipelines.predictor import Predictor
-from src.pipelines.trainer import Trainer
+from src.models.predictor import Predictor
+from src.models.trainer import Trainer
+from src.models.utils.params_architecture import (
+    Architecture,
+    ArchitectureParams,
+    ArchitectureParamsModular,
+    ArchitectureParamsNULL,
+)
 
 
 @dataclass
@@ -33,39 +35,29 @@ class ModelPathsParameters:
     discriminator_path: str
 
 
-class Architecture(enum.Enum):
-    GANStyle = "Style Gan"
-    GANUNet = "UNet GAN"
-    GANFixed = "Fixed GAN"
-    GANModular = "Modular GAN"
-
-
-@dataclass
-class ArchitectureParams:
-    pass
-
-
 class Pipeline(ABC):
     def __init__(
         self,
         *,
         architecture: Architecture = Architecture.UnetGAN,
-        architecture_params: ArchitectureParams = NULLArhcitectureParams(),
+        architecture_params: ArchitectureParams = ArchitectureParamsNULL(),
         cartoons_dataset_parameters: CartoonsDatasetParameters,
         pictures_dataset_parameters: PicturesDatasetParameters,
-        training_parameters: CartoonGanBaseParameters,
-        pretraining_parameters: CartoonGanBaseParameters = None,
+        training_parameters: TrainerParams,
+        pretraining_parameters: Optional[TrainerParams] = None,
         init_models_paths: Optional[ModelPathsParameters] = None,
     ):
         # Initialize parameters
         self.device = init_device()
-        self.trainer = init_trainer(architecture)
-        self.inferer = Predictor(architecture, architecture_params=architecture_params)
+        self.inferer = Predictor(
+            architecture=architecture, architecture_params=architecture_params
+        )
         self.architecture = architecture
         self.architecture_params = architecture_params
         self.cartoons_dataset_parameters = cartoons_dataset_parameters
         self.pictures_dataset_parameters = pictures_dataset_parameters
         self.training_params = training_parameters
+        self.trainer = self.__init_trainer()
 
         self.pretraining_params = (
             pretraining_parameters
@@ -327,10 +319,10 @@ class Pipeline(ABC):
 
         # First we try to load a saved model
         model = load_model(pretrain=False)
-        if model == None:
+        if model is None:
             # If that doesn't work, we try to load a pretrained model
             model = load_model(pretrain=True)
-            if model == None:
+            if model is None:
                 # If that doesn't work, we put nb trained and pretrained to 0...
                 self.params["epochs_pretrained_nb"] = 0
                 self.params["epochs_trained_nb"] = 0
@@ -338,10 +330,10 @@ class Pipeline(ABC):
                 # ...and we try to load the possible input model
                 if self.init_models_paths.generator_path != None:
                     model = asdict(self.init_models_paths)
-        if model == None:
-            logging.info("No model found")
+        if model is None:
+            logging.warning("No model found")
         else:
-            logging.info("Model found: ", model)
+            logging.warning("Model found: ", model)
         return model
 
     #############
@@ -362,6 +354,18 @@ class Pipeline(ABC):
         """To add a prefix on all the fields of a dictionary"""
         return {"{}_{}".format(prefix, k): v for (k, v) in asdict(dataclass).items()}
 
+    def __init_trainer(self):
+        if self.architecture == Architecture.GANFixed:
+            assert isinstance(
+                self.architecture_params, ArchitectureParamsNULL
+            ), "Fixed architecture requires null architecture parameters"
+            return Trainer(self.architecture_params, self.device)
+        if self.architecture == Architecture.GANModular:
+            assert isinstance(
+                self.architecture_params, ArchitectureParamsModular
+            ), "Modular architecture requires modular params"
+            return Trainer(self.architecture_params, self.device)
+
 
 def init_device() -> str:
     """To find the GPU if it exists"""
@@ -372,7 +376,3 @@ def init_device() -> str:
     else:
         logging.info("Nvidia card unavailable, running on CPU")
     return "cuda" if cuda else "cpu"
-
-
-def init_trainer():
-    pass

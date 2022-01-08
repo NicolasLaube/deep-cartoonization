@@ -5,21 +5,7 @@ from src.pipelines.pipeline import ArchitectureParams
 
 
 @dataclass
-class GANModularArchitectureParams(ArchitectureParams):
-    nb_resnet_blocks: Optional[int] = 8
-    nb_channels_picture: Optional[int] = 3
-    nb_channels_cartoon: Optional[int] = 3
-    nb_channels_1st_hidden_layer_gen: Optional[int] = 64
-    nb_channels_1st_hidden_layer_disc: Optional[int] = 32
-
-
-@dataclass
-class NULLArhcitectureParams(ArchitectureParams):
-    pass
-
-
-@dataclass
-class CartoonGanParameters:
+class TrainerParams:
     gen_lr: float
     disc_lr: float
     batch_size: int
