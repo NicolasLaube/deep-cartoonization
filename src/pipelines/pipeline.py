@@ -62,7 +62,7 @@ class Pipeline(ABC):
         )
 
         # Initialize logs
-        self.__init_logs()
+        self.paramas = self.__init_logs()
 
     def pretrain(self, nb_epochs: int) -> None:
         """To pretrain the model"""
@@ -135,20 +135,20 @@ class Pipeline(ABC):
     def __init_logs(self):
         """To init the logs folder or to load the training model"""
         # Import all fixed params & parameters of all runs
-        """global_params = {
+        global_params = {
             "cartoon_gan_architecture": self.architecture.value,
-            **models.Trainer.__format_dataclass(
-                self.cartoon_gan_model_params, "cartoon_gan_model"
+            **Pipeline.__format_dataclass(
+                self.architecture_params, "cartoon_gan_model"
             ),
-            **models.Trainer.__format_dataclass(
+            **Pipeline.__format_dataclass(
                 self.cartoons_dataset_parameters, "cartoon_dataset"
             ),
-            **models.Trainer.__format_dataclass(
+            **Pipeline.__format_dataclass(
                 self.pictures_dataset_parameters, "pictures_dataset"
             ),
-            **models.Trainer.__format_dataclass(self.pretraining_params, "pretraining"),
-            **models.Trainer.__format_dataclass(self.training_params, "training"),
-            **models.Trainer.__format_dataclass(self.init_models_paths, "init"),
+            **Pipeline.__format_dataclass(self.pretraining_params, "pretraining"),
+            **Pipeline.__format_dataclass(self.training_params, "training"),
+            **Pipeline.__format_dataclass(self.init_models_paths, "init"),
         }
         df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
         # Format some fields so they can be comparable with the ones from the csv file
@@ -163,15 +163,16 @@ class Pipeline(ABC):
             )
             for (key, val) in global_params.items()
         }
+
         # Check if the model was already created
         checking_df = df_all_params[global_params.keys()] == global_params.values()
         matching_values = checking_df[
             checking_df.apply(lambda x: reduce(logical_and, x), axis=1)
         ].index.values
         if len(matching_values) > 0:
-            self.__import_logs(df_all_params.iloc[matching_values[0]])
+            params = self.__import_logs(df_all_params.iloc[matching_values[0]])
         else:
-            self.__create_logs(global_params)
+            params = self.__create_logs(global_params)
         # We can now create the log file
         log_path = os.path.join(
             self.folder_path,
@@ -184,13 +185,13 @@ class Pipeline(ABC):
             datefmt="%H:%M:%S",
             level=logging.DEBUG,
         )
-        logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))"""
+        logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+        return params
 
     def __import_logs(self, params):
         # Load the parameters
-        self.params = params
-        self.folder_path = os.path.join(config.LOGS_FOLDER, self.params["run_id"])
-        self.weights_path = os.path.join(config.WEIGHTS_FOLDER, self.params["run_id"])
+        self.folder_path = os.path.join(config.LOGS_FOLDER, params["run_id"])
+        self.weights_path = os.path.join(config.WEIGHTS_FOLDER, params["run_id"])
         # Load the nb of epochs trained
         max_epoch_training = self.params["epochs_trained_nb"]
         max_epoch_pretraining = self.params["epochs_pretrained_nb"]
@@ -201,8 +202,9 @@ class Pipeline(ABC):
             if file_name[:7] == "trained":
                 epoch_nb = int(file_name.split(".")[0].split("_")[-1]) - 1
                 max_epoch_training = max(max_epoch_training, epoch_nb)
-        self.params["epochs_pretrained_nb"] = max_epoch_pretraining
-        self.params["epochs_trained_nb"] = max_epoch_training
+        params["epochs_pretrained_nb"] = max_epoch_pretraining
+        params["epochs_trained_nb"] = max_epoch_training
+        return params
 
     def __create_logs(self, global_params):
         """To create the logs if they aren't"""
@@ -301,7 +303,7 @@ class Pipeline(ABC):
 
     def __get_model_to_load(self) -> Optional[ModelPathsParameters]:
         """To load the (pre)trained model"""
-        """
+
         def load_model(pretrain):
             gen_name, disc_name = "{}trained_gen_{}.pkl".format(
                 "pre" if pretrain else "", self.params["epochs_trained_nb"] + 1
@@ -347,12 +349,12 @@ class Pipeline(ABC):
         else:
             logging.warning("Model found: ", model)
         return model
-    """
 
     #############
     ### Other ###
     #############
 
+    @staticmethod
     def __format_dataclass(dataclass: dataclass, prefix: str) -> Dict[str, Any]:
         """To add a prefix on all the fields of a dictionary"""
         return {"{}_{}".format(prefix, k): v for (k, v) in asdict(dataclass).items()}
