@@ -103,11 +103,10 @@ class Pipeline(ABC):
             train_params=training_parameters,
         )
 
-    """
     def cartoonize_images(
         self, nb_images: int = -1
     ) -> List[NDArray[(3, Any, Any), np.int32]]:
-        \"""To show some cartoonized images\"""
+        """To show some cartoonized images"""
 
         models_to_load_paths = self.__get_model_to_load()
 
@@ -125,8 +124,6 @@ class Pipeline(ABC):
         return self.predictor.cartoonize_dataset(
             pictures_loader=test_pictures_loader, nb_images=nb_images
         )
-    
-    """
 
     ###################
     ### About inits ###

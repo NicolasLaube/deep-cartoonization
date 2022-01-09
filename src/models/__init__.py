@@ -1,4 +1,4 @@
-# from src.models.predictor import Predictor
+from src.models.predictor import Predictor
 from src.models.utils.parameters import (
     Architecture,
     ArchitectureParams,
