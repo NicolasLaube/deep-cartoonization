@@ -6,7 +6,7 @@ from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
 import torch
 from src.models.generators import UNet, FixedGenerator, ModularGenerator
-from src.pipelines.pipeline import Architecture
+from src.models import Architecture
 
 
 class Predictor(ABC):

@@ -1,9 +1,9 @@
 from typing import List
 import pandas as pd
-from src.dataset.utils import Movie
+from src import config
 
 
-def filter_movies(df_images: pd.DataFrame, movies: List[Movie]) -> pd.DataFrame:
+def filter_movies(df_images: pd.DataFrame, movies: List[config.Movie]) -> pd.DataFrame:
     """
     To take images only in specific movies (portrait, landscape...)
     """

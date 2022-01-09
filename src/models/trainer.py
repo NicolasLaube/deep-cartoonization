@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 import torch
-from torch._C import device
 from torch.utils.data.dataloader import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 from typing import Optional
-from src.models.utils.params_trainer import TrainerParams
-from src import config
 from torch.utils.tensorboard import SummaryWriter
+
+
+from src.models.utils.parameters import TrainerParams
+from src import config
 
 writer = SummaryWriter()
 
@@ -22,12 +23,13 @@ def assertsize(func):
 class Trainer(ABC):
     """Generic trainer class"""
 
-    def __init__(self, architecture_params, device: str = "cpu") -> None:
+    def __init__(self, device: str = "cpu") -> None:
         self.device = device
-        self.architecture_params = architecture_params
-        self.generator = self.__load_generator()
-        self.discriminator = self.__load_discriminator()
+        self.generator = self.load_generator()
+        self.discriminator = self.load_discriminator()
+
         self.writer = SummaryWriter()
+        self.last_save_time = datetime.now()
 
         self.generator.to(device)
         self.discriminator.to(device)
@@ -38,8 +40,8 @@ class Trainer(ABC):
         self.gen_scheduler: Optional[optim.Optimizer] = None
         self.disc_scheduler: Optional[optim.Optimizer] = None
 
-    @abstractmethod
     @assertsize
+    @abstractmethod
     def train(
         self,
         *,
@@ -85,31 +87,35 @@ class Trainer(ABC):
             )
 
     @abstractmethod
-    def __load_generator(self) -> nn.Module:
+    def load_generator(self) -> nn.Module:
         pass
 
     @abstractmethod
-    def __load_discriminator(self) -> nn.Module:
+    def load_discriminator(self) -> nn.Module:
         pass
 
-    def __save_loss(self, step: int, **kargs):
+    def _save_loss(self, step: int, **kargs):
         for key, loss in kargs:
             self.writer.add_scalar(key, loss, global_step=step)
 
-    def __init_timer(self):
+    def _reset_timer(self):
         self.last_save = datetime.now()
 
-    def __save_weights(self, gen_path, disc_path):
+    def _callback(self, callback: callable):
+        if callback is not None:
+            callback()
+
+    def _save_weights(self, gen_path, disc_path):
         if ((datetime.now() - self.last_save).seconds / 60) > config.SAVE_EVERY_MIN:
-            self.last_save = datetime.now()
+            self.__reset_timer()
             self.save_model(gen_path, disc_path)
 
-    def __set_train_mode(self):
+    def _set_train_mode(self):
         """Set model to train mode"""
         self.generator.train()
         self.discriminator.train()
 
-    def __init_optimizers(self, params: TrainerParams):
+    def _init_optimizers(self, params: TrainerParams):
         """Load optimizers"""
         self.gen_optimizer = optim.Adam(
             self.generator.parameters(),

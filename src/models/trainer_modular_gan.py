@@ -1,9 +1,7 @@
 import os
-from typing import Any, List, Optional
-import numpy as np
-from nptyping import NDArray
+from typing import Optional
+
 import torch
-import torch.optim as optim
 from time import time
 import logging
 import torch.nn as nn
@@ -12,21 +10,10 @@ from tqdm import tqdm
 from datetime import datetime
 
 from src import config
-
-from src.models.generators.generator_modular import ModularGenerator
-from src.models.discriminators.discriminator_modular import ModularDiscriminator
-from src.models.utils.params_trainer import (
-    CartoonGanParameters,
-    CartoonGanArchitecture,
-    CartoonGanModelParameters,
-    CartoonGanLossParameters,
-    TrainerParams,
-)
-from src.models.utils.vgg19 import VGG19
 from src.models.generators.generator_fixed import FixedGenerator
 from src.models.discriminators.discriminator_fixed import FixedDiscriminator
-from src.models.generators.generator_unet import UNet
 from src.models.trainer import Trainer
+from src.models.utils.parameters import TrainerParams
 
 
 class FixedCartoonGan(Trainer):
@@ -36,14 +23,11 @@ class FixedCartoonGan(Trainer):
         **kargs,
     ) -> None:
         Trainer.__init__(*args, **kargs)
-        self.vgg19 = VGG19(config.VGG_WEIGHTS, feature_mode=True)
-        self.vgg19.to(self.device)
-        self.vgg19.eval()
 
-    def __load_discriminator(self) -> nn.Module:
+    def _Trainer__load_discriminator(self) -> nn.Module:
         return FixedDiscriminator()
 
-    def __load_generator(self) -> nn.Module:
+    def _Trainer__load_generator(self) -> nn.Module:
         return FixedGenerator()
 
     def pretrain(

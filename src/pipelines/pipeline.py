@@ -1,5 +1,4 @@
-from abc import abstractmethod, ABC
-import enum
+from abc import ABC
 import os
 import sys
 from dataclasses import asdict, dataclass, replace
@@ -13,20 +12,11 @@ from numpy import logical_and
 from typing import Any, Dict, List, Optional
 import torch
 from torch.utils.data import DataLoader
+
 from src import config
-from src.models.utils.params_trainer import TrainerParams
-from src.extraction import *
-from src.dataset.parameters import CartoonsDatasetParameters, PicturesDatasetParameters
-from src.dataset.dataset_cartoon import init_cartoon_dataset
-from src.dataset.dataset_pictures import init_pictures_dataset
-from src.models.predictor import Predictor
-from src.models.trainer import Trainer
-from src.models.utils.params_architecture import (
-    Architecture,
-    ArchitectureParams,
-    ArchitectureParamsModular,
-    ArchitectureParamsNULL,
-)
+import src.dataset as dataset
+import src.models as models
+import src.preprocessing as preprocessing
 
 
 @dataclass
@@ -39,19 +29,19 @@ class Pipeline(ABC):
     def __init__(
         self,
         *,
-        architecture: Architecture = Architecture.UnetGAN,
-        architecture_params: ArchitectureParams = ArchitectureParamsNULL(),
-        cartoons_dataset_parameters: CartoonsDatasetParameters,
-        pictures_dataset_parameters: PicturesDatasetParameters,
-        training_parameters: TrainerParams,
-        pretraining_parameters: Optional[TrainerParams] = None,
+        architecture: models.Architecture = models.Architecture.GANFixed,
+        architecture_params: models.ArchitectureParams = models.ArchitectureParamsNULL(),
+        cartoons_dataset_parameters: dataset.CartoonsDatasetParameters,
+        pictures_dataset_parameters: dataset.PicturesDatasetParameters,
+        training_parameters: models.TrainerParams,
+        pretraining_parameters: Optional[models.TrainerParams] = None,
         init_models_paths: Optional[ModelPathsParameters] = None,
     ):
         # Initialize parameters
         self.device = init_device()
-        self.inferer = Predictor(
+        """self.predictor = models.Predictor(
             architecture=architecture, architecture_params=architecture_params
-        )
+        )"""
         self.architecture = architecture
         self.architecture_params = architecture_params
         self.cartoons_dataset_parameters = cartoons_dataset_parameters
@@ -80,57 +70,49 @@ class Pipeline(ABC):
         pretraining_parameters = replace(self.pretraining_params)
         pretraining_parameters.epochs = nb_epochs
         # If there is a model to load we must load it before
+
         models_to_load_paths = self.__get_model_to_load()
         if models_to_load_paths != None:
-            self.cartoon_gan.load_model(**models_to_load_paths)
+            self.trainer.load_model(**models_to_load_paths)
 
         self.trainer.pretrain(
             pictures_loader=self.train_pictures_loader,
             cartoon_loader=self.train_cartoons_loader,
             batch_callback=None,
             epoch_start=self.params["epochs_pretrained_nb"] + 1,
+            pretrain_params=pretraining_parameters,
         )
-        # parameters=pretraining_parameters,
-        # saved_weights_path=self.weights_path,
-
-        self.params["epochs_pretrained_nb"] += nb_epochs
-        # self.params["pretrain_reconstruction_loss"] = loss
-        self.__save_params()
 
     def train(self, nb_epochs: int) -> None:
         """To train the model"""
         self.__init_train_data_loaders(pretraining=False)
         training_parameters = replace(self.training_params)
         training_parameters.epochs = nb_epochs
+
         # If there is a model to load we must load it before
         models_to_load_paths = self.__get_model_to_load()
+
         if models_to_load_paths != None:
-            self.cartoon_gan.load_model(**models_to_load_paths)
-        # Then we can train the model
+            self.trainer.load_model(**models_to_load_paths)
+
         self.trainer.train(
             pictures_loader=self.train_pictures_loader,
-            cartoon_loader=self.train_cartoons_loader,
+            cartoons_loader=self.train_cartoons_loader,
             batch_callback=None,
-            epoch_start=self.params["epochs_pretrained_nb"] + 1,
+            epoch_start=0,  # self.params["epochs_pretrained_nb"] + 1,
+            train_params=training_parameters,
         )
-        # parameters=training_parameters,
-        # saved_weights_path=self.weights_path,
 
-        self.params["epochs_trained_nb"] += nb_epochs
-        # self.params["train_discriminator_loss"] = losses["discriminator_loss"]
-        # self.params["train_generator_loss"] = losses["generator_loss"]
-        # self.params["train_conditional_loss"] = losses["conditional_loss"]
-        self.__save_params()
-
+    """
     def cartoonize_images(
         self, nb_images: int = -1
     ) -> List[NDArray[(3, Any, Any), np.int32]]:
-        """To show some cartoonized images"""
+        \"""To show some cartoonized images\"""
 
         models_to_load_paths = self.__get_model_to_load()
 
         if models_to_load_paths != None:
-            self.inferer.load_model(**models_to_load_paths)
+            self.predictor.load_model(**models_to_load_paths)
 
         test_pictures_loader = DataLoader(
             dataset=self.pictures_dataset,
@@ -140,9 +122,11 @@ class Pipeline(ABC):
             num_workers=config.NUM_WORKERS,
         )
 
-        return self.cartoon_gan.cartoonize_dataset(
+        return self.predictor.cartoonize_dataset(
             pictures_loader=test_pictures_loader, nb_images=nb_images
         )
+    
+    """
 
     ###################
     ### About inits ###
@@ -151,20 +135,20 @@ class Pipeline(ABC):
     def __init_logs(self):
         """To init the logs folder or to load the training model"""
         # Import all fixed params & parameters of all runs
-        global_params = {
-            "cartoon_gan_architecture": self.cartoon_gan_architecture.value,
-            **Trainer.__format_dataclass(
+        """global_params = {
+            "cartoon_gan_architecture": self.architecture.value,
+            **models.Trainer.__format_dataclass(
                 self.cartoon_gan_model_params, "cartoon_gan_model"
             ),
-            **Trainer.__format_dataclass(
+            **models.Trainer.__format_dataclass(
                 self.cartoons_dataset_parameters, "cartoon_dataset"
             ),
-            **Trainer.__format_dataclass(
+            **models.Trainer.__format_dataclass(
                 self.pictures_dataset_parameters, "pictures_dataset"
             ),
-            **Trainer.__format_dataclass(self.pretraining_params, "pretraining"),
-            **Trainer.__format_dataclass(self.training_params, "training"),
-            **Trainer.__format_dataclass(self.init_models_paths, "init"),
+            **models.Trainer.__format_dataclass(self.pretraining_params, "pretraining"),
+            **models.Trainer.__format_dataclass(self.training_params, "training"),
+            **models.Trainer.__format_dataclass(self.init_models_paths, "init"),
         }
         df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
         # Format some fields so they can be comparable with the ones from the csv file
@@ -200,7 +184,7 @@ class Pipeline(ABC):
             datefmt="%H:%M:%S",
             level=logging.DEBUG,
         )
-        logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+        logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))"""
 
     def __import_logs(self, params):
         # Load the parameters
@@ -241,21 +225,49 @@ class Pipeline(ABC):
     ### About (pre)training and testing ###
     #######################################
 
+    def __init_cartoons_dataset(self, train: bool = True):
+        data_filter = preprocessing.Filter(
+            new_size=self.cartoons_dataset_parameters.new_size,
+            selected_movies=self.cartoons_dataset_parameters.selected_movies,
+            ratio_filter_mode=self.cartoons_dataset_parameters.ratio_filter_mode,
+        )
+        transform = preprocessing.Transform(
+            architecture=self.architecture,
+            new_size=self.cartoons_dataset_parameters.new_size,
+            crop_mode=self.cartoons_dataset_parameters.crop_mode,
+        )
+        return dataset.CartoonDataset(
+            data_filter.cartoon_filter,
+            transform.cartoon_transform,
+            self.cartoons_dataset_parameters.nb_images,
+            train,
+        )
+
+    def __init_pictures_dataset(self, train: bool = True):
+        data_filter = preprocessing.Filter(
+            new_size=self.pictures_dataset_parameters.new_size,
+            ratio_filter_mode=self.pictures_dataset_parameters.ratio_filter_mode,
+        )
+        transform = preprocessing.Transform(
+            new_size=self.pictures_dataset_parameters.new_size,
+            crop_mode=self.pictures_dataset_parameters.crop_mode,
+            architecture=self.architecture,
+        )
+        return dataset.PicturesDataset(
+            data_filter.picture_filter,
+            transform.picture_transform,
+            self.pictures_dataset_parameters.nb_images,
+            train,
+        )
+
     def __init_datasets(self, train: bool, with_cartoons: bool) -> None:
         """To init the picture and cartoons datasets"""
         # Pictures dataset
-        self.pictures_dataset = init_pictures_dataset(
-            self.pictures_dataset_parameters,
-            nb_images=self.nb_images_pictures,
-            train=train,
-        )
+        self.pictures_dataset = self.__init_pictures_dataset(train=train)
+
         if with_cartoons:
-            # Cartoon dataset
-            self.cartoons_dataset = init_cartoon_dataset(
-                self.cartoons_dataset_parameters,
-                nb_images=self.nb_images_cartoons,
-                train=train,
-            )
+            self.cartoons_dataset = self.__init_cartoons_dataset(train=train)
+
             # Then we must limit the nb of images
             nb_images = min(len(self.pictures_dataset), len(self.cartoons_dataset))
             self.pictures_dataset.set_nb_images(nb_images)
@@ -289,7 +301,7 @@ class Pipeline(ABC):
 
     def __get_model_to_load(self) -> Optional[ModelPathsParameters]:
         """To load the (pre)trained model"""
-
+        """
         def load_model(pretrain):
             gen_name, disc_name = "{}trained_gen_{}.pkl".format(
                 "pre" if pretrain else "", self.params["epochs_trained_nb"] + 1
@@ -335,36 +347,27 @@ class Pipeline(ABC):
         else:
             logging.warning("Model found: ", model)
         return model
+    """
 
     #############
     ### Other ###
     #############
-
-    def __save_params(self):
-        """To save the parameters in the csv file"""
-        df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
-        df_extract = df_all_params[df_all_params["run_id"] == self.params["run_id"]]
-        if len(df_extract) > 0:
-            df_extract = self.params
-        else:
-            df_all_params = df_all_params.append(self.params, ignore_index=True)
-        df_all_params.to_csv(config.ALL_PARAMS_CSV)
 
     def __format_dataclass(dataclass: dataclass, prefix: str) -> Dict[str, Any]:
         """To add a prefix on all the fields of a dictionary"""
         return {"{}_{}".format(prefix, k): v for (k, v) in asdict(dataclass).items()}
 
     def __init_trainer(self):
-        if self.architecture == Architecture.GANFixed:
+        if self.architecture == models.Architecture.GANFixed:
             assert isinstance(
-                self.architecture_params, ArchitectureParamsNULL
+                self.architecture_params, models.ArchitectureParamsNULL
             ), "Fixed architecture requires null architecture parameters"
-            return Trainer(self.architecture_params, self.device)
-        if self.architecture == Architecture.GANModular:
+            return models.FixedCartoonGANTrainer(device=self.device)
+        if self.architecture == models.Architecture.GANModular:
             assert isinstance(
-                self.architecture_params, ArchitectureParamsModular
+                self.architecture_params, models.ArchitectureParamsModular
             ), "Modular architecture requires modular params"
-            return Trainer(self.architecture_params, self.device)
+            return models.FixedCartoonGANTrainer(self.architecture_params, self.device)
 
 
 def init_device() -> str:
@@ -376,3 +379,24 @@ def init_device() -> str:
     else:
         logging.info("Nvidia card unavailable, running on CPU")
     return "cuda" if cuda else "cpu"
+
+
+if __name__ == "__main__":
+    pipeline = Pipeline(
+        architecture=models.Architecture.GANFixed,
+        architecture_params=models.ArchitectureParamsNULL(),
+        cartoons_dataset_parameters=dataset.CartoonsDatasetParameters(
+            new_size=(256, 256),
+            crop_mode=preprocessing.CropMode.CROP_CENTER,
+        ),
+        pictures_dataset_parameters=dataset.PicturesDatasetParameters(
+            new_size=(256, 256),
+            crop_mode=preprocessing.CropMode.CROP_CENTER,
+            ratio_filter_mode=preprocessing.RatioFilterMode.NO_FILTER,
+        ),
+        init_models_paths=None,
+        training_parameters=models.TrainerParams(),
+        pretraining_parameters=models.TrainerParams(),
+    )
+
+    pipeline.train(10)

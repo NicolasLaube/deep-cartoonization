@@ -1,107 +1,81 @@
 import os
-from typing import Any, List, Optional
-import numpy as np
-from nptyping import NDArray
+from typing import Optional
 import torch
-import torch.optim as optim
-from time import time
 import logging
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from datetime import datetime
 
 from src import config
-
-from src.models.utils.params_trainer import TrainerParams
-from src.models.utils.vgg19 import VGG19
+from src.models.utils.parameters import TrainerParams
 from src.models.generators.generator_fixed import FixedGenerator
 from src.models.discriminators.discriminator_fixed import FixedDiscriminator
 from src.models.trainer import Trainer
+from src.models.losses import AdversarialLoss, ContentLoss
 
 
-class FixedCartoonGan(Trainer):
+class FixedCartoonGANTrainer(Trainer):
     def __init__(
         self,
         *args,
         **kargs,
     ) -> None:
-        Trainer.__init__(*args, **kargs)
-        self.vgg19 = VGG19(config.VGG_WEIGHTS, feature_mode=True)
-        self.vgg19.to(self.device)
-        self.vgg19.eval()
+        Trainer.__init__(self, *args, **kargs)
 
-    def __load_discriminator(self) -> nn.Module:
+    def load_discriminator(self) -> nn.Module:
         return FixedDiscriminator()
 
-    def __load_generator(self) -> nn.Module:
+    def load_generator(self) -> nn.Module:
         return FixedGenerator()
 
     def pretrain(
         self,
         *,
         pictures_loader: DataLoader,
-        batch_callback: callable,
         pretrain_params: TrainerParams,
         epoch_start: int = 0,
         weights_folder: Optional[str] = config.WEIGHTS_FOLDER,
+        batch_callback: Optional[callable] = None,
     ) -> float:
         """Pretrains model"""
-        self.__init_optimizers(pretrain_params)
-        self.__set_train_mode()
+        self._init_optimizers(pretrain_params)
+        self._set_train_mode()
+        self._reset_timer()
 
-        l1_loss = nn.L1Loss().to(self.device)
-
-        last_save_time = datetime.now()
+        content_loss = ContentLoss().to(self.device)
+        scaler = torch.cuda.amp.GradScaler()
 
         for epoch in range(epoch_start, pretrain_params.epochs + epoch_start):
-            logging.info("Epoch %s/%s", epoch, pretrain_params.epochs)
-            epoch_start_time = time()
-            reconstruction_losses = []
-            for picture_batch in tqdm(pictures_loader):
-                picture_batch = picture_batch.to(self.device)
-                self.gen_optimizer.zero_grad()
 
-                cartoons_fake = self.generator(picture_batch)
+            for pictures in tqdm(pictures_loader):
 
-                features_pictures = self.vgg19((picture_batch + 1) / 2)
-                features_fake = self.vgg19((cartoons_fake + 1) / 2)
+                pictures = pictures.to(self.device)
 
-                # image reconstruction with only L1 loss function
-                reconstruction_loss = 10 * l1_loss(
-                    features_fake, features_pictures.detach()
+                self.generator.zero_grad()
+
+                with torch.cuda.amp.autocast():
+
+                    gen_cartoons = self.generator(pictures)
+                    reconstruction_loss = content_loss(gen_cartoons, pictures)
+
+                scaler.scale(reconstruction_loss).backward()
+                scaler.step(self.gen_optimizer)
+
+                self._save_loss(
+                    step=epoch,
+                    reconstruction_loss=reconstruction_loss,
                 )
-                reconstruction_losses.append(reconstruction_loss.item())
+                self._save_weights(
+                    os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
+                    os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
+                )
 
-                reconstruction_loss.backward()
-                self.gen_optimizer.step()
+                self._callback(batch_callback)
 
-                if (
-                    (datetime.now() - last_save_time).seconds / 60
-                ) > config.SAVE_EVERY_MIN:
-                    # reset time
-                    last_save_time = datetime.now()
-                    # save all n minutes
-                    self.save_model(
-                        os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
-                        os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
-                    )
             self.save_model(
                 os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
                 os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
             )
-            per_epoch_time = time() - epoch_start_time
-
-            logging.info(
-                "[%d/%d] - time: %.2f, Recon loss: %.3f"
-                % (
-                    (epoch + 1),
-                    pretrain_params.epochs,
-                    per_epoch_time,
-                    torch.mean(torch.FloatTensor(reconstruction_losses)),
-                )
-            )
-            return torch.mean(torch.FloatTensor(reconstruction_losses))
 
     def train(
         self,
@@ -114,11 +88,9 @@ class FixedCartoonGan(Trainer):
         weights_folder: Optional[str] = None,
     ) -> None:
         """Train function"""
-        self.__init_optimizers(train_params)
-        self.__set_train_mode()
-
-        l1_loss = nn.L1Loss().to(self.device)
-        bce_loss = nn.BCELoss().to(self.device)
+        self._init_optimizers(train_params)
+        self._set_train_mode()
+        self._reset_timer()
 
         real = torch.ones(
             cartoons_loader.batch_size,
@@ -133,78 +105,81 @@ class FixedCartoonGan(Trainer):
             train_params.input_size // 4,
         ).to(self.device)
 
+        # Intialize losses
+        content_loss = ContentLoss().to(self.device)
+        bce_loss = nn.BCEWithLogitsLoss().to(self.device)
+        adversarial_loss = AdversarialLoss(real, fake).to(self.device)
+
+        scaler = torch.cuda.amp.GradScaler()
+
         for epoch in range(epoch_start, train_params.epochs + epoch_start):
             logging.info("Epoch %s/%s", epoch, train_params.epochs)
-
-            epoch_start_time = time()
 
             self.gen_scheduler.step()
             self.disc_scheduler.step()
 
-            for picture_batch, cartoon_batch in tqdm(
+            for pictures, cartoons in tqdm(
                 zip(pictures_loader, cartoons_loader), total=len(pictures_loader)
             ):
 
-                # e = cartoon_batch[:, :, :, parameters.input_size:]
-                cartoon_batch = cartoon_batch  # [:, :, :, : parameters.input_size]
-                picture_batch = picture_batch.to(self.device)
-                cartoon_batch = cartoon_batch.to(self.device)
-                # e = e.to(self.device)
+                pictures = pictures.to(self.device)
+                cartoons = cartoons.to(self.device)
 
-                # Discriminator training
-                self.disc_optimizer.zero_grad()
+                ##########################
+                # Discriminator training #
+                ##########################
 
-                disc_real_cartoons = self.discriminator(cartoon_batch)
-                disc_real_cartoon_loss = bce_loss(disc_real_cartoons, real)
+                self.discriminator.zero_grad()
+                for param in self.discriminator.parameters():
+                    param.requires_grad = True
 
-                gen_cartoons = self.generator(picture_batch)
-                disc_fake_cartoons = self.discriminator(gen_cartoons)
-                disc_fake_cartoon_loss = bce_loss(disc_fake_cartoons, fake)
+                with torch.cuda.amp.autocast:
+                    gen_cartoons = self.generator(pictures)
 
-                # D_edge = self.discriminator(e)
-                # disc_edged_cartoon_loss = bce_loss(D_edge, fake)
+                    disc_fake = self.discriminator(gen_cartoons.detach())
+                    disc_true = self.discriminator(cartoons)
 
-                disc_loss = (
-                    disc_fake_cartoon_loss + disc_real_cartoon_loss
-                )  # + disc_edged_cartoon_loss
+                    disc_loss = adversarial_loss(disc_true, disc_fake)
 
-                disc_loss.backward()
-                self.disc_optimizer.step()
+                scaler.scale(disc_loss).backward()
+                scaler.step(self.disc_optimizer)
 
-                # Generator training
-                self.gen_optimizer.zero_grad()
+                ######################
+                # Generator training #
+                ######################
 
-                generated_image = self.generator(cartoon_batch)
-                disc_fake = self.discriminator(generated_image)
-                disc_fake_loss = bce_loss(disc_fake, real)
+                self.generator.zero_grad()
+                for param in self.discriminator.parameters():
+                    param.requires_grad = False
 
-                picture_features = self.vgg19((picture_batch + 1) / 2)
-                cartoon_features = self.vgg19((generated_image + 1) / 2)
+                with torch.cuda.amp.autocast():
+                    disc_fake = self.discriminator(pictures)
 
-                conditionnal_loss = train_params.conditional_lambda * l1_loss(
-                    cartoon_features, picture_features.detach()
-                )
+                    gen_bce_loss = bce_loss(disc_fake, fake)
+                    gen_content_loss = content_loss(gen_cartoons, pictures)
+                    gen_loss = gen_bce_loss + gen_content_loss
 
-                gen_loss = disc_fake_loss + conditionnal_loss
+                scaler.scale(gen_loss).backward()
+                scaler.step(self.gen_optimizer)
 
-                gen_loss.backward()
-                self.gen_optimizer.step()
+                scaler.update()
 
-                self.__save_loss(
+                self._save_loss(
                     step=epoch,
-                    cond_loss=conditionnal_loss,
                     disc_loss=disc_loss,
+                    content_loss=gen_content_loss,
+                    bce_loss=gen_bce_loss,
                     gen_loss=gen_loss,
                 )
 
-                self.__save_weights(
+                self._save_weights(
                     os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
                     os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
                 )
+
+                self._callback(batch_callback)
 
             self.save_model(
                 os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
                 os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
             )
-
-            per_epoch_time = time() - epoch_start_time
