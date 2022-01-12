@@ -180,6 +180,9 @@ class Pipeline:
             self.folder_path,
             "logs_{}.log".format(datetime.now().strftime("%Y_%m_%d-%H_%M_%S")),
         )
+        for handler in logging.getLogger().handlers[:]:
+            print(handler)
+            logging.root.removeHandler(handler)
         logging.basicConfig(
             filename=log_path,
             filemode="a",
