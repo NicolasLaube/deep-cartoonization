@@ -1,16 +1,22 @@
 from torchvision import transforms
 import numpy as np
 from nptyping import NDArray
-from typing import Any
+from typing import Any, Tuple
 
 
-def normalize(image: NDArray[(Any, Any), np.int32]) -> NDArray[(Any, Any), np.int32]:
-    """
-    Normalize images
-    """
-    return transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
-        ]
-    )(image)
+class Normalizer:
+    def __init__(
+        self, mean: Tuple[float] = (0.5, 0.5, 0.5), std: Tuple[float] = (0.5, 0.5, 0.5)
+    ) -> None:
+        self.mean = mean
+        self.std = std
+
+    def normalize(
+        self, image: NDArray[(Any, Any), np.int32]
+    ) -> NDArray[(Any, Any), np.int32]:
+        return transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(mean=self.mean, std=self.std),
+            ]
+        )(image)

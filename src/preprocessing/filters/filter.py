@@ -1,11 +1,15 @@
 import pandas as pd
 from typing import List, Tuple
-from src.dataset.utils import Movie
-from src import config
 
-from src.preprocessing.filters import low_quality_filter
-from src.preprocessing.filters import ratio_filter
-from src.preprocessing.filters import movie_filter
+
+from src import config
+from src.preprocessing.filters.low_quality_filter import filter_low_quality
+from src.preprocessing.filters.ratio_filter import (
+    RatioFilterMode,
+    RatioFilterModes,
+    filter_ratio,
+)
+from src.preprocessing.filters.movie_filter import filter_movies
 
 
 class Filter:
@@ -14,16 +18,16 @@ class Filter:
     def __init__(
         self,
         new_size: Tuple[int, int] = None,
-        selected_movies: List[Movie] = config.MOVIES,
-        ratio_filter_mode: ratio_filter.RatioFilterModes = ratio_filter.RatioFilterMode.NO_FILTER.value,
+        selected_movies: List[config.Movie] = config.MOVIES,
+        ratio_filter_mode: RatioFilterModes = RatioFilterMode.NO_FILTER,
     ) -> None:
         self.new_size = new_size
         self.movies = selected_movies
-        self.ratio_filter_mode = ratio_filter_mode
+        self.ratio_filter_mode = ratio_filter_mode.value
 
     def cartoon_filter(self, df_images: pd.DataFrame) -> pd.DataFrame:
         """Filter cartoons"""
-        df_images = movie_filter.filter_movies(df_images, self.movies)
+        df_images = filter_movies(df_images, self.movies)
         return self.__main_filter(df_images)
 
     def picture_filter(self, df_images: pd.DataFrame) -> pd.DataFrame:
@@ -32,6 +36,6 @@ class Filter:
 
     def __main_filter(self, df_images: pd.DataFrame) -> pd.DataFrame:
         """Filter images (functions that are common to both frame and picture preprocessing)"""
-        df_images = low_quality_filter.filter_low_quality(df_images, self.new_size)
-        df_images = ratio_filter.filter_ratio(df_images, self.ratio_filter_mode)
+        df_images = filter_low_quality(df_images, self.new_size)
+        df_images = filter_ratio(df_images, self.ratio_filter_mode)
         return df_images
