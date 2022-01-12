@@ -11,8 +11,6 @@ from torch.utils.tensorboard import SummaryWriter
 from src.models.utils.parameters import TrainerParams
 from src import config
 
-writer = SummaryWriter()
-
 
 def assertsize(func):
     def wrapper(*args, **kwargs):
@@ -28,7 +26,7 @@ class Trainer(ABC):
         self.generator = self.load_generator()
         self.discriminator = self.load_discriminator()
 
-        self.writer = SummaryWriter()
+        self.writer = SummaryWriter("logs/tensorboard")
         self.last_save_time = datetime.now()
 
         self.generator.to(device)
