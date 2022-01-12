@@ -53,7 +53,7 @@ class FixedCartoonGANTrainer(Trainer):
 
                 self.generator.zero_grad()
 
-                with torch.cuda.amp.autocast():
+                with torch.autocast(self.device):
 
                     gen_cartoons = self.generator(pictures)
                     reconstruction_loss = content_loss(gen_cartoons, pictures)
@@ -133,7 +133,7 @@ class FixedCartoonGANTrainer(Trainer):
                 for param in self.discriminator.parameters():
                     param.requires_grad = True
 
-                with torch.cuda.amp.autocast:
+                with torch.autocast(self.device):
                     gen_cartoons = self.generator(pictures)
 
                     disc_fake = self.discriminator(gen_cartoons.detach())
@@ -152,7 +152,7 @@ class FixedCartoonGANTrainer(Trainer):
                 for param in self.discriminator.parameters():
                     param.requires_grad = False
 
-                with torch.cuda.amp.autocast():
+                with torch.autocast(self.device):
                     disc_fake = self.discriminator(pictures)
 
                     gen_bce_loss = bce_loss(disc_fake, fake)

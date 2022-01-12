@@ -1,4 +1,4 @@
-from abc import ABC
+import enum
 import os
 import sys
 from dataclasses import asdict, dataclass, replace
@@ -25,7 +25,7 @@ class ModelPathsParameters:
     discriminator_path: str
 
 
-class Pipeline(ABC):
+class Pipeline:
     def __init__(
         self,
         *,
@@ -38,7 +38,7 @@ class Pipeline(ABC):
         init_models_paths: Optional[ModelPathsParameters] = None,
     ):
         # Initialize parameters
-        self.device = init_device()
+        self.device = Pipeline.__init_device()
         """self.predictor = models.Predictor(
             architecture=architecture, architecture_params=architecture_params
         )"""
@@ -156,9 +156,14 @@ class Pipeline(ABC):
             key: (
                 "None"
                 if val == None
-                else (str(val) if type(val) == tuple or type(val) == list else val)
+                else (
+                    str(val)
+                    if type(val) == tuple or type(val) == list
+                    else (val.name if isinstance(val, enum.Enum) else val)
+                )
             )
             for (key, val) in global_params.items()
+            if key not in ["cartoon_dataset_nb_images", "pictures_dataset_nb_images"]
         }
 
         # Check if the model was already created
@@ -186,6 +191,7 @@ class Pipeline(ABC):
         return params
 
     def __import_logs(self, params):
+        self.params = params
         # Load the parameters
         self.folder_path = os.path.join(config.LOGS_FOLDER, params["run_id"])
         self.weights_path = os.path.join(config.WEIGHTS_FOLDER, params["run_id"])
@@ -351,11 +357,6 @@ class Pipeline(ABC):
     ### Other ###
     #############
 
-    @staticmethod
-    def __format_dataclass(dataclass: dataclass, prefix: str) -> Dict[str, Any]:
-        """To add a prefix on all the fields of a dictionary"""
-        return {"{}_{}".format(prefix, k): v for (k, v) in asdict(dataclass).items()}
-
     def __init_trainer(self):
         if self.architecture == models.Architecture.GANFixed:
             assert isinstance(
@@ -368,16 +369,31 @@ class Pipeline(ABC):
             ), "Modular architecture requires modular params"
             return models.FixedCartoonGANTrainer(self.architecture_params, self.device)
 
+    def __save_params(self):
+        """To save the parameters in the csv file"""
+        df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
+        df_extract = df_all_params[df_all_params["run_id"] == self.params["run_id"]]
+        if len(df_extract) > 0:
+            df_extract = self.params
+        else:
+            df_all_params = df_all_params.append(self.params, ignore_index=True)
+        df_all_params.to_csv(config.ALL_PARAMS_CSV)
 
-def init_device() -> str:
-    """To find the GPU if it exists"""
-    cuda = torch.cuda.is_available()
-    if cuda:
-        logging.info("Nvidia card available, running on GPU")
-        logging.info(torch.cuda.get_device_name(0))
-    else:
-        logging.info("Nvidia card unavailable, running on CPU")
-    return "cuda" if cuda else "cpu"
+    @staticmethod
+    def __format_dataclass(dataclass: dataclass, prefix: str) -> Dict[str, Any]:
+        """To add a prefix on all the fields of a dictionary"""
+        return {"{}_{}".format(prefix, k): v for (k, v) in asdict(dataclass).items()}
+
+    @staticmethod
+    def __init_device() -> str:
+        """To find the GPU if it exists"""
+        cuda = torch.cuda.is_available()
+        if cuda:
+            logging.info("Nvidia card available, running on GPU")
+            logging.info(torch.cuda.get_device_name(0))
+        else:
+            logging.info("Nvidia card unavailable, running on CPU")
+        return "cuda" if cuda else "cpu"
 
 
 if __name__ == "__main__":

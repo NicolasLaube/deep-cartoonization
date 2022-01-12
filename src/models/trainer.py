@@ -95,7 +95,7 @@ class Trainer(ABC):
         pass
 
     def _save_loss(self, step: int, **kargs):
-        for key, loss in kargs:
+        for key, loss in kargs.items():
             self.writer.add_scalar(key, loss, global_step=step)
 
     def _reset_timer(self):
