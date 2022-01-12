@@ -107,7 +107,8 @@ class FixedCartoonGan(Trainer):
         weights_folder: Optional[str] = None,
     ) -> None:
         """Train function"""
-        self.__init_optimizers(train_params)
+        self._init_optimizers(train_params)
+        weights_folder = self._init_weight_folder(weights_folder)
         self.__set_train_mode()
 
         l1_loss = nn.L1Loss().to(self.device)

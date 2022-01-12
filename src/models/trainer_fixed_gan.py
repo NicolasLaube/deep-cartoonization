@@ -89,6 +89,7 @@ class FixedCartoonGANTrainer(Trainer):
     ) -> None:
         """Train function"""
         self._init_optimizers(train_params)
+        weights_folder = self._init_weight_folder(weights_folder)
         self._set_train_mode()
         self._reset_timer()
 

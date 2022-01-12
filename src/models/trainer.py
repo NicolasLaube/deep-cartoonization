@@ -107,7 +107,7 @@ class Trainer(ABC):
 
     def _save_weights(self, gen_path, disc_path):
         if ((datetime.now() - self.last_save).seconds / 60) > config.SAVE_EVERY_MIN:
-            self.__reset_timer()
+            self._reset_timer()
             self.save_model(gen_path, disc_path)
 
     def _set_train_mode(self):
@@ -136,4 +136,11 @@ class Trainer(ABC):
             optimizer=self.disc_optimizer,
             milestones=[params.epochs // 2, params.epochs // 4 * 3],
             gamma=0.1,
+        )
+
+    @staticmethod
+    def _init_weight_folder(weight_folder_path):
+        """Set correct weight folder path"""
+        return (
+            weight_folder_path if weight_folder_path != None else config.WEIGHTS_FOLDER
         )
