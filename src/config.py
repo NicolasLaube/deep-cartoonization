@@ -22,7 +22,7 @@ class Movie(Enum):
 ### About folders ###
 #####################
 
-ROOT_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
+ROOT_FOLDER = "."
 
 DATA_FOLDER = os.path.join(ROOT_FOLDER, "data")
 
@@ -35,11 +35,13 @@ PICTURES_CSV = os.path.join(DATA_FOLDER, "flickr", "captions.csv")
 CARTOONS_ALL_CSV = os.path.join(DATA_FOLDER, "cartoons_all.csv")
 CARTOONS_FILTERED_CSV = os.path.join(DATA_FOLDER, "cartoons_all.csv")
 CARTOONS_TRAIN_CSV = os.path.join(DATA_FOLDER, "cartoons_train.csv")
+CARTOONS_VALIDATION_CSV = os.path.join(DATA_FOLDER, "cartoons_validation.csv")
 CARTOONS_TEST_CSV = os.path.join(DATA_FOLDER, "cartoons_test.csv")
 
 PICTURES_ALL_CSV = os.path.join(DATA_FOLDER, "pictures_all.csv")
 PICTURES_FILTERED_CSV = os.path.join(DATA_FOLDER, "pictures_all.csv")
 PICTURES_TRAIN_CSV = os.path.join(DATA_FOLDER, "pictures_train.csv")
+PICTURES_VALIDATION_CSV = os.path.join(DATA_FOLDER, "pictures_validation.csv")
 PICTURES_TEST_CSV = os.path.join(DATA_FOLDER, "pictures_test.csv")
 
 
@@ -75,6 +77,7 @@ OUTPUT_CHANNELS = 3
 #######################
 
 TEST_SIZE = 0.2
+VALIDATION_SIZE = 0.15
 RANDOM_STATE = 42
 NUM_WORKERS = 2
 SAVE_EVERY_MIN = 15
