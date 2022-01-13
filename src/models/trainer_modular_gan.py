@@ -75,11 +75,11 @@ class FixedCartoonGan(Trainer):
                     # reset time
                     last_save_time = datetime.now()
                     # save all n minutes
-                    self.save_model(
+                    self._save_model(
                         os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
                         os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
                     )
-            self.save_model(
+            self._save_model(
                 os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
                 os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
             )
@@ -200,11 +200,11 @@ class FixedCartoonGan(Trainer):
                     # reset time
                     last_save_time = datetime.now()
                     # save all n minutes
-                    self.save_model(
+                    self._save_model(
                         os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
                         os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
                     )
-            self.save_model(
+            self._save_model(
                 os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
                 os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
             )

@@ -82,6 +82,7 @@ class Pipeline:
             cartoon_loader=self.train_cartoons_loader,
             batch_callback=self.__get_callback(pretrain=True),
             epoch_start=self.params["epochs_pretrained_nb"] + 1,
+            weights_folder=self.weights_path,
             pretrain_params=pretraining_parameters,
         )
 
@@ -102,6 +103,7 @@ class Pipeline:
             cartoons_loader=self.train_cartoons_loader,
             batch_callback=self.__get_callback(pretrain=False),
             epoch_start=self.params["epochs_pretrained_nb"] + 1,
+            weights_folder=self.weights_path,
             train_params=training_parameters,
         )
 
@@ -183,7 +185,6 @@ class Pipeline:
             "logs_{}.log".format(Pipeline.__get_time_id()),
         )
         for handler in logging.getLogger().handlers[:]:
-            print(handler)
             logging.root.removeHandler(handler)
         logging.basicConfig(
             filename=log_path,

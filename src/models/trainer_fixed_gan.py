@@ -74,7 +74,7 @@ class FixedCartoonGANTrainer(Trainer):
                 }
                 self._callback(batch_callback, callback_args)
 
-            self.save_model(
+            self._save_model(
                 os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
                 os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
             )
@@ -183,7 +183,7 @@ class FixedCartoonGANTrainer(Trainer):
                 }
                 self._callback(batch_callback, callback_args)
 
-            self.save_model(
+            self._save_model(
                 os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
                 os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
             )

@@ -100,7 +100,12 @@ class Trainer(ABC):
     def _save_weights(self, gen_path, disc_path):
         if ((datetime.now() - self.last_save).seconds / 60) > config.SAVE_EVERY_MIN:
             self._reset_timer()
-            self.save_model(gen_path, disc_path)
+            self._save_model(gen_path, disc_path)
+
+    def _save_model(self, generator_path: str, discriminator_path: str) -> None:
+        """Save a model"""
+        torch.save(self.generator.state_dict(), generator_path)
+        torch.save(self.discriminator.state_dict(), discriminator_path)
 
     def _set_train_mode(self):
         """Set model to train mode"""
