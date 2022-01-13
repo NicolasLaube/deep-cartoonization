@@ -90,6 +90,21 @@ class Trainer(ABC):
     def load_discriminator(self) -> nn.Module:
         pass
 
+    def load_model(self, generator_path: str, discriminator_path: str) -> None:
+        """Loads the model from path"""
+        if torch.cuda.is_available():
+            self.discriminator.load_state_dict(torch.load(discriminator_path))
+            self.generator.load_state_dict(torch.load(generator_path))
+        else:
+            self.discriminator.load_state_dict(
+                torch.load(
+                    discriminator_path, map_location=lambda storage, loc: storage
+                )
+            )
+            self.generator.load_state_dict(
+                torch.load(generator_path, map_location=lambda storage, loc: storage)
+            )
+
     def _reset_timer(self):
         self.last_save = datetime.now()
 

@@ -360,9 +360,9 @@ class Pipeline:
                 if self.init_models_paths.generator_path != None:
                     model = asdict(self.init_models_paths)
         if model is None:
-            logging.warning("No model found")
+            logging.info("No model found")
         else:
-            logging.warning("Model found: ", model)
+            logging.info("Model found.")
         return model
 
     def __get_callback(self, pretrain: bool = False):
