@@ -61,16 +61,18 @@ class FixedCartoonGANTrainer(Trainer):
                 scaler.scale(reconstruction_loss).backward()
                 scaler.step(self.gen_optimizer)
 
-                self._save_loss(
-                    step=epoch,
-                    reconstruction_loss=reconstruction_loss,
-                )
                 self._save_weights(
                     os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
                     os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
                 )
 
-                self._callback(batch_callback)
+                callback_args = {
+                    "epoch": epoch,
+                    "losses": {
+                        "reconstruction_loss": reconstruction_loss,
+                    },
+                }
+                self._callback(batch_callback, callback_args)
 
             self.save_model(
                 os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
@@ -165,20 +167,21 @@ class FixedCartoonGANTrainer(Trainer):
 
                 scaler.update()
 
-                self._save_loss(
-                    step=epoch,
-                    disc_loss=disc_loss,
-                    content_loss=gen_content_loss,
-                    bce_loss=gen_bce_loss,
-                    gen_loss=gen_loss,
-                )
-
                 self._save_weights(
                     os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
                     os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
                 )
 
-                self._callback(batch_callback)
+                callback_args = {
+                    "epoch": epoch,
+                    "losses": {
+                        "disc_loss": disc_loss,
+                        "content_loss": gen_content_loss,
+                        "bce_loss": gen_bce_loss,
+                        "gen_loss": gen_loss,
+                    },
+                }
+                self._callback(batch_callback, callback_args)
 
             self.save_model(
                 os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),

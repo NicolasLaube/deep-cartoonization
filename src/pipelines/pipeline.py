@@ -1,6 +1,7 @@
 import enum
 import os
 import sys
+import json
 from dataclasses import asdict, dataclass, replace
 import logging
 from datetime import datetime
@@ -12,6 +13,7 @@ from numpy import logical_and
 from typing import Any, Dict, List, Optional
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 from src import config
 import src.dataset as dataset
@@ -78,7 +80,7 @@ class Pipeline:
         self.trainer.pretrain(
             pictures_loader=self.train_pictures_loader,
             cartoon_loader=self.train_cartoons_loader,
-            batch_callback=None,
+            batch_callback=self.__get_callback(pretrain=True),
             epoch_start=self.params["epochs_pretrained_nb"] + 1,
             pretrain_params=pretraining_parameters,
         )
@@ -98,8 +100,8 @@ class Pipeline:
         self.trainer.train(
             pictures_loader=self.train_pictures_loader,
             cartoons_loader=self.train_cartoons_loader,
-            batch_callback=None,
-            epoch_start=0,  # self.params["epochs_pretrained_nb"] + 1,
+            batch_callback=self.__get_callback(pretrain=False),
+            epoch_start=self.params["epochs_pretrained_nb"] + 1,
             train_params=training_parameters,
         )
 
@@ -177,8 +179,8 @@ class Pipeline:
             params = self.__create_logs(global_params)
         # We can now create the log file
         log_path = os.path.join(
-            self.folder_path,
-            "logs_{}.log".format(datetime.now().strftime("%Y_%m_%d-%H_%M_%S")),
+            self.logs_path,
+            "logs_{}.log".format(Pipeline.__get_time_id()),
         )
         for handler in logging.getLogger().handlers[:]:
             print(handler)
@@ -197,6 +199,8 @@ class Pipeline:
         self.params = params
         # Load the parameters
         self.folder_path = os.path.join(config.LOGS_FOLDER, params["run_id"])
+        self.logs_path = os.path.join(self.folder_path, "logs")
+        self.losses_path = os.path.join(self.folder_path, "losses")
         self.weights_path = os.path.join(config.WEIGHTS_FOLDER, params["run_id"])
         # Load the nb of epochs trained
         max_epoch_training = self.params["epochs_trained_nb"]
@@ -217,7 +221,7 @@ class Pipeline:
         # Create the parameters
         self.params = pd.Series(global_params)
         # Create run id
-        self.params["run_id"] = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
+        self.params["run_id"] = Pipeline.__get_time_id()
         # Create nb of epochs trained
         self.params["epochs_pretrained_nb"] = 0
         self.params["epochs_trained_nb"] = 0
@@ -226,8 +230,12 @@ class Pipeline:
         # Create folder for this run
         self.folder_path = os.path.join(config.LOGS_FOLDER, self.params["run_id"])
         self.weights_path = os.path.join(config.WEIGHTS_FOLDER, self.params["run_id"])
+        self.logs_path = os.path.join(self.folder_path, "logs")
+        self.losses_path = os.path.join(self.folder_path, "losses")
         os.mkdir(self.folder_path)
         os.mkdir(self.weights_path)
+        os.mkdir(self.logs_path)
+        os.mkdir(self.losses_path)
 
     #######################################
     ### About (pre)training and testing ###
@@ -356,6 +364,30 @@ class Pipeline:
             logging.warning("Model found: ", model)
         return model
 
+    def __get_callback(self, pretrain: bool = False):
+        """Return callback for pretrain/train"""
+        train_state = "pretrain" if pretrain else "train"
+        writer = SummaryWriter(
+            f"logs/tensorboard/{self.params['run_id']}_{train_state}"
+        )
+
+        def callback(epoch: int, losses: Dict[str, float]):
+            # Save losses in tensorboard
+            for key, loss in losses.items():
+                writer.add_scalar(key, loss, global_step=epoch)
+            # Save losses in file
+            str_losses = {k: loss.item() for k, loss in losses.items()}
+            with open(
+                os.path.join(self.losses_path, f"{train_state}_{epoch}.txt"), "a"
+            ) as file:
+                file.write(f"{Pipeline.__get_time_id()}; {json.dumps(str_losses)}\n")
+            # Save global loss in global params
+            for key, loss in str_losses.items():
+                self.params[f"{train_state}_{key}"] = loss
+            self.__save_params()
+
+        return callback
+
     #############
     ### Other ###
     #############
@@ -381,6 +413,11 @@ class Pipeline:
         else:
             df_all_params = df_all_params.append(self.params, ignore_index=True)
         df_all_params.to_csv(config.ALL_PARAMS_CSV)
+
+    @staticmethod
+    def __get_time_id() -> str:
+        """Return an id based on the current time"""
+        return datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
 
     @staticmethod
     def __format_dataclass(dataclass: dataclass, prefix: str) -> Dict[str, Any]:

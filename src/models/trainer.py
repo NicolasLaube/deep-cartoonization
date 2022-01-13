@@ -4,8 +4,7 @@ import torch
 from torch.utils.data.dataloader import DataLoader
 import torch.nn as nn
 import torch.optim as optim
-from typing import Optional
-from torch.utils.tensorboard import SummaryWriter
+from typing import Optional, Dict, Any
 
 
 from src.models.utils.parameters import TrainerParams
@@ -26,7 +25,6 @@ class Trainer(ABC):
         self.generator = self.load_generator()
         self.discriminator = self.load_discriminator()
 
-        self.writer = SummaryWriter("logs/tensorboard")
         self.last_save_time = datetime.now()
 
         self.generator.to(device)
@@ -92,16 +90,12 @@ class Trainer(ABC):
     def load_discriminator(self) -> nn.Module:
         pass
 
-    def _save_loss(self, step: int, **kargs):
-        for key, loss in kargs.items():
-            self.writer.add_scalar(key, loss, global_step=step)
-
     def _reset_timer(self):
         self.last_save = datetime.now()
 
-    def _callback(self, callback: callable):
+    def _callback(self, callback: callable, kwargs: Dict[str, Any]):
         if callback is not None:
-            callback()
+            callback(**kwargs)
 
     def _save_weights(self, gen_path, disc_path):
         if ((datetime.now() - self.last_save).seconds / 60) > config.SAVE_EVERY_MIN:
