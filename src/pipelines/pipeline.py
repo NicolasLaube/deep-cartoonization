@@ -409,7 +409,7 @@ class Pipeline:
         df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
         df_extract = df_all_params[df_all_params["run_id"] == self.params["run_id"]]
         if len(df_extract) > 0:
-            df_extract = self.params
+            df_all_params.loc[df_extract.index[0], :] = self.params[:]
         else:
             df_all_params = df_all_params.append(self.params, ignore_index=True)
         df_all_params.to_csv(config.ALL_PARAMS_CSV)
