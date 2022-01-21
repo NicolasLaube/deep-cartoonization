@@ -108,7 +108,7 @@ class Trainer(ABC):
     def _save_weights(self, gen_path, disc_path):
         if ((datetime.now() - self.last_save).seconds / 60) > config.SAVE_EVERY_MIN:
             self._reset_timer()
-            self.save_model(gen_path, disc_path)
+            self.save(gen_path, disc_path)
 
     def _set_train_mode(self):
         """Set model to train mode"""
