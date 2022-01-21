@@ -231,6 +231,7 @@ class Pipeline:
     #######################################
 
     def __init_cartoons_dataset(self, train: bool = True):
+        """Initialize dataset"""
         data_filter = preprocessing.Filter(
             new_size=self.cartoons_dataset_parameters.new_size,
             selected_movies=self.cartoons_dataset_parameters.selected_movies,
