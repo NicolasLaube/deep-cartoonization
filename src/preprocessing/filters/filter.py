@@ -1,15 +1,14 @@
-import pandas as pd
-from typing import List, Tuple
+"""Filter"""
+# pylint: disable=W0102
+from typing import List, Optional, Tuple
 
+import pandas as pd
 
 from src import config
 from src.preprocessing.filters.low_quality_filter import filter_low_quality
-from src.preprocessing.filters.ratio_filter import (
-    RatioFilterMode,
-    RatioFilterModes,
-    filter_ratio,
-)
 from src.preprocessing.filters.movie_filter import filter_movies
+from src.preprocessing.filters.ratio_filter import (RatioFilterMode,
+                                                    filter_ratio)
 
 
 class Filter:
@@ -17,9 +16,9 @@ class Filter:
 
     def __init__(
         self,
-        new_size: Tuple[int, int] = None,
+        new_size: Optional[Tuple[int, int]] = None,
         selected_movies: List[config.Movie] = config.MOVIES,
-        ratio_filter_mode: RatioFilterModes = RatioFilterMode.NO_FILTER,
+        ratio_filter_mode: RatioFilterMode = RatioFilterMode.NO_FILTER,
     ) -> None:
         self.new_size = new_size
         self.movies = selected_movies

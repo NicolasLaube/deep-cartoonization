@@ -1,17 +1,19 @@
-from torchvision import transforms
+"""Resize"""
+# pylint: disable=E0401
+from enum import Enum
+from typing import Any, Optional, Tuple
+
 import numpy as np
 from nptyping import NDArray
-from typing import Any, NewType, Tuple
-from enum import Enum
+from torchvision import transforms
 
 
 class CropMode(Enum):
+    """Crop modes"""
+
     RESIZE = None
     CROP_CENTER = "center"
     CROP_RANDOM = "random"
-
-
-CropModes = NewType("CropModes", CropMode)
 
 
 def resize_no_crop(
@@ -49,18 +51,19 @@ def resize_crop_random(
 
 def resize(
     image: NDArray[(Any, Any), np.int32],
-    new_size: Tuple[int, int],
-    crop_mode: CropModes,
+    new_size: Optional[Tuple[int, int]],
+    crop_mode: CropMode,
 ) -> NDArray[(Any, Any), np.int32]:
     """
     Resize an image with a specific mode
     """
-    if new_size == None:
-        image = image
-    elif crop_mode == CropMode.RESIZE.value:
-        image = resize_no_crop(image, new_size)
-    elif crop_mode == CropMode.CROP_CENTER.value:
-        image = resize_crop_center(image, new_size)
-    elif crop_mode == CropMode.CROP_RANDOM.value:
-        image = resize_crop_random(image, new_size)
+    if new_size is None:
+        return image
+
+    if crop_mode == CropMode.RESIZE.value:
+        return resize_no_crop(image, new_size)
+    if crop_mode == CropMode.CROP_CENTER.value:
+        return resize_crop_center(image, new_size)
+    if crop_mode == CropMode.CROP_RANDOM.value:
+        return resize_crop_random(image, new_size)
     return image
