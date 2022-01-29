@@ -19,8 +19,6 @@ data/**
 !data/cartoon_csv/.gitkeep
 !data/cartoon_frames/.gitkeep
 !data/flickr/.gitkeep
-!data/cartoons_*.csv
-!data/pictures_*.csv
 weights/*
 !weights/.gitkeep
 !weights/vgg
