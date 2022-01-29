@@ -189,7 +189,7 @@ class Pipeline:
             data_filter.cartoon_filter,
             transform.cartoon_transform,
             self.cartoons_dataset_parameters.nb_images,
-            train,
+            "train" if train else "validation",
         )
 
     def __init_pictures_dataset(self, train: bool) -> dataset.PicturesDataset:
@@ -209,7 +209,7 @@ class Pipeline:
             data_filter.picture_filter,
             transform.picture_transform,
             self.pictures_dataset_parameters.nb_images,
-            train,
+            "train" if train else "validation",
         )
 
     def __init_trainer(self) -> Trainer:
