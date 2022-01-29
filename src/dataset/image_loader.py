@@ -1,9 +1,11 @@
 """Generic Image Loader"""
-from typing import Any
-from torch.utils.data import Dataset
-from PIL import Image
-import pandas as pd
+from typing import Callable
+
 import numpy as np
+import pandas as pd
+from nptyping import NDArray
+from PIL import Image
+from torch.utils.data import Dataset
 
 
 class ImageLoader(Dataset):
@@ -12,16 +14,15 @@ class ImageLoader(Dataset):
     def __init__(
         self,
         csv_path: str,
-        filter_data: callable,
-        transform: callable,
+        filter_data: Callable[[pd.DataFrame], pd.DataFrame],
+        transform: Callable[[NDArray], NDArray],
         nb_images: int = -1,
     ) -> None:
-        self.csv_path = csv_path
-        self.df_images = None
         self.filter_data = filter_data
         self.transform = transform
-        self.__load_images()
-        self.df_images = self.filter_data(self.df_images)
+        self.df_images: pd.DataFrame = self.filter_data(
+            pd.read_csv(csv_path, index_col=0)
+        )
         self.set_nb_images(nb_images)
 
     def set_nb_images(self, nb_images: int) -> None:
@@ -35,15 +36,11 @@ class ImageLoader(Dataset):
         self.df_images = self.df_images.sample(n=nb_images)
         self.df_images = self.df_images.reset_index(drop=True)
 
-    def __load_images(self) -> None:
-        """Loads the list of images"""
-        self.df_images = pd.read_csv(self.csv_path, index_col=0)
-
     def __len__(self) -> int:
         """Length"""
         return len(self.df_images)
 
-    def __getitem__(self, index: int) -> Any:
+    def __getitem__(self, index: int) -> NDArray:
         """Get an item"""
         image = Image.open(self.df_images["path"][index])
         return self.transform(image)

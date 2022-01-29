@@ -1,6 +1,8 @@
 """Cartoon dataset Loader"""
-from typing import List
+from typing import Callable
 
+import pandas as pd
+from nptyping import NDArray
 
 from src import config
 from src.dataset.image_loader import ImageLoader
@@ -11,8 +13,8 @@ class CartoonDataset(ImageLoader):
 
     def __init__(
         self,
-        filter_data: callable,
-        transform: callable,
+        filter_data: Callable[[pd.DataFrame], pd.DataFrame],
+        transform: Callable[[NDArray], NDArray],
         nb_images: int = -1,
         train: bool = True,
         test: bool = False,
