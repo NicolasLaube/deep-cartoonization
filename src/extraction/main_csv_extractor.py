@@ -1,14 +1,16 @@
 import os
+from typing import Dict, List
+
 import pandas as pd
 from PIL import Image
 from tqdm import tqdm
 
-# from tqdm.auto import tqdm  # for notebooks
-
 from src import config
 
+# from tqdm.auto import tqdm  # for notebooks
 
-def extract_frames(movie: str) -> None:
+
+def extract_frames(movie: str) -> List[Dict[str, str]]:
     """
     Extract information about all frames of a specific movie.
     """

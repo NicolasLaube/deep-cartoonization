@@ -1,8 +1,8 @@
-import os
 from typing import Any
+
+import matplotlib.pyplot as plt
 import numpy as np
 from nptyping import NDArray
-import matplotlib.pyplot as plt
 
 
 def show_array(array: NDArray[(3, Any, Any), np.int32]) -> None:

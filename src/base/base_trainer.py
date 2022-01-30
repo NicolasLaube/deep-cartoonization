@@ -1,20 +1,15 @@
+"""Base Trainer class"""
+# pylint: disable=R0902
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Any, Callable, Dict, Optional
+
 import torch
+from torch import nn, optim
 from torch.utils.data.dataloader import DataLoader
-import torch.nn as nn
-import torch.optim as optim
-from typing import Optional, Dict, Any
 
-
-from src.models.utils.parameters import TrainerParams
 from src import config
-
-
-def assertsize(func):
-    def wrapper(*args, **kwargs):
-        assert len(args[0]) == len(args[1]), "Lengths should be identical"
-        return func(*args, **kwargs)
+from src.models.utils.parameters import TrainerParams
 
 
 class Trainer(ABC):
@@ -31,45 +26,48 @@ class Trainer(ABC):
         self.discriminator.to(device)
 
         # initialize other variables
-        self.gen_optimizer: Optional[optim.Optimizer] = None
-        self.disc_optimizer: Optional[optim.Optimizer] = None
-        self.gen_scheduler: Optional[optim.Optimizer] = None
-        self.disc_scheduler: Optional[optim.Optimizer] = None
+        self.gen_optimizer: optim.Optimizer = None  # type: ignore
+        self.disc_optimizer: optim.Optimizer = None  # type: ignore
+        self.gen_scheduler: optim.lr_scheduler.MultiStepLR = None  # type: ignore
+        self.disc_scheduler: optim.lr_scheduler.MultiStepLR = None  # type: ignore
 
-    @assertsize
     @abstractmethod
     def train(
         self,
         *,
         pictures_loader: DataLoader,
         cartoons_loader: DataLoader,
-        batch_callback: callable,
         train_params: TrainerParams,
+        batch_callback: Optional[Callable] = None,
         epoch_start: int = 0,
-        weights_folder: Optional[str] = config.WEIGHTS_FOLDER,
+        weights_folder: str = config.WEIGHTS_FOLDER,
+        epochs: int = 10
     ) -> None:
         """Train the model"""
-        pass
 
     @abstractmethod
     def pretrain(
         self,
         *,
         pictures_loader: DataLoader,
-        batch_callback: callable,
         pretrain_params: TrainerParams,
+        batch_callback: Optional[Callable] = None,
         epoch_start: int = 0,
-        weights_folder: Optional[str] = config.WEIGHTS_FOLDER,
+        weights_folder: str = config.WEIGHTS_FOLDER,
+        epochs: int = 10
     ) -> None:
         """Pretrain the model"""
-        pass
 
-    def save(self, disc_path: str, gen_path: str) -> None:
+    def save_model(
+        self,
+        gen_path: str,
+        disc_path: str,
+    ) -> None:
         """Save the model"""
         torch.save(self.generator.state_dict(), gen_path)
         torch.save(self.discriminator.state_dict(), disc_path)
 
-    def load(self, disc_path: str, gen_path: str) -> None:
+    def load_model(self, gen_path: str, disc_path: str) -> None:
         """Load the model from weights"""
         if torch.cuda.is_available():
             self.discriminator.load_state_dict(torch.load(disc_path))
@@ -84,36 +82,27 @@ class Trainer(ABC):
 
     @abstractmethod
     def load_generator(self) -> nn.Module:
-        pass
+        """Load generator"""
 
     @abstractmethod
     def load_discriminator(self) -> nn.Module:
-        pass
+        """Load discriminator"""
 
-    def load_model(self, generator_path: str, discriminator_path: str) -> None:
-        """Loads the model from path"""
-        if torch.cuda.is_available():
-            self.discriminator.load_state_dict(torch.load(discriminator_path))
-            self.generator.load_state_dict(torch.load(generator_path))
-        else:
-            self.discriminator.load_state_dict(
-                torch.load(
-                    discriminator_path, map_location=lambda storage, loc: storage
-                )
-            )
-            self.generator.load_state_dict(
-                torch.load(generator_path, map_location=lambda storage, loc: storage)
-            )
+    def _reset_timer(self) -> None:
+        """Reset timer"""
+        self.last_save_time = datetime.now()
 
-    def _reset_timer(self):
-        self.last_save = datetime.now()
-
-    def _callback(self, callback: callable, kwargs: Dict[str, Any]):
+    @staticmethod
+    def _callback(callback: Optional[Callable], kwargs: Dict[str, Any]):
+        """Call callback function if defined"""
         if callback is not None:
             callback(**kwargs)
 
-    def _save_weights(self, gen_path, disc_path):
-        if ((datetime.now() - self.last_save).seconds / 60) > config.SAVE_EVERY_MIN:
+    def _save_weights(self, gen_path: str, disc_path: str) -> None:
+        """Save weights"""
+        if (
+            (datetime.now() - self.last_save_time).seconds / 60
+        ) > config.SAVE_EVERY_MIN:
             self._reset_timer()
             self._save_model(gen_path, disc_path)
 
@@ -122,12 +111,12 @@ class Trainer(ABC):
         torch.save(self.generator.state_dict(), generator_path)
         torch.save(self.discriminator.state_dict(), discriminator_path)
 
-    def _set_train_mode(self):
+    def _set_train_mode(self) -> None:
         """Set model to train mode"""
         self.generator.train()
         self.discriminator.train()
 
-    def _init_optimizers(self, params: TrainerParams):
+    def _init_optimizers(self, params: TrainerParams, epochs: int) -> None:
         """Load optimizers"""
         self.gen_optimizer = optim.Adam(
             self.generator.parameters(),
@@ -141,18 +130,11 @@ class Trainer(ABC):
         )
         self.gen_scheduler = optim.lr_scheduler.MultiStepLR(
             optimizer=self.gen_optimizer,
-            milestones=[params.epochs // 2, params.epochs // 4 * 3],
+            milestones=[epochs // 2, epochs // 4 * 3],
             gamma=0.1,
         )
         self.disc_scheduler = optim.lr_scheduler.MultiStepLR(
             optimizer=self.disc_optimizer,
-            milestones=[params.epochs // 2, params.epochs // 4 * 3],
+            milestones=[epochs // 2, epochs // 4 * 3],
             gamma=0.1,
-        )
-
-    @staticmethod
-    def _init_weight_folder(weight_folder_path):
-        """Set correct weight folder path"""
-        return (
-            weight_folder_path if weight_folder_path != None else config.WEIGHTS_FOLDER
         )

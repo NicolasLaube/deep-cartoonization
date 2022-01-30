@@ -1,5 +1,5 @@
 [MASTER]
-disable=too-few-public-methods,duplicate-code
+disable=too-few-public-methods,duplicate-code,missing-module-docstring
 # Good variable names which should always be accepted, separated by a comma
 good-names=i,j,k,X_train,y_train,X_test,y_test,X_val,y_val,id,X,y,x,db,df,ax
 max-args=6

@@ -1,20 +1,24 @@
+"""Fixed GAN"""
+# pylint: disable=E1102,R0914
 import os
-from typing import Optional
+from typing import Any, Callable, Optional
+
 import torch
-import logging
-import torch.nn as nn
+from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src import config
-from src.models.utils.parameters import TrainerParams
-from src.models.generators.generator_fixed import FixedGenerator
+from src.base.base_trainer import Trainer
 from src.models.discriminators.discriminator_fixed import FixedDiscriminator
-from src.models.trainer import Trainer
+from src.models.generators.generator_fixed import FixedGenerator
 from src.models.losses import AdversarialLoss, ContentLoss
+from src.models.utils.parameters import TrainerParams
 
 
 class FixedCartoonGANTrainer(Trainer):
+    """Fixed GAN"""
+
     def __init__(
         self,
         *args,
@@ -23,9 +27,11 @@ class FixedCartoonGANTrainer(Trainer):
         Trainer.__init__(self, *args, **kargs)
 
     def load_discriminator(self) -> nn.Module:
+        """Loads discriminator"""
         return FixedDiscriminator()
 
     def load_generator(self) -> nn.Module:
+        """Loads generator"""
         return FixedGenerator()
 
     def pretrain(
@@ -33,19 +39,20 @@ class FixedCartoonGANTrainer(Trainer):
         *,
         pictures_loader: DataLoader,
         pretrain_params: TrainerParams,
+        batch_callback: Optional[Callable] = None,
         epoch_start: int = 0,
-        weights_folder: Optional[str] = config.WEIGHTS_FOLDER,
-        batch_callback: Optional[callable] = None,
-    ) -> float:
+        weights_folder: str = config.WEIGHTS_FOLDER,
+        epochs: int = 10,
+    ) -> None:
         """Pretrains model"""
-        self._init_optimizers(pretrain_params)
+        self._init_optimizers(pretrain_params, epochs)
         self._set_train_mode()
         self._reset_timer()
 
         content_loss = ContentLoss().to(self.device)
         scaler = torch.cuda.amp.GradScaler()
 
-        for epoch in range(epoch_start, pretrain_params.epochs + epoch_start):
+        for epoch in range(epoch_start, epochs + epoch_start):
 
             for pictures in tqdm(pictures_loader):
 
@@ -84,25 +91,30 @@ class FixedCartoonGANTrainer(Trainer):
         *,
         pictures_loader: DataLoader,
         cartoons_loader: DataLoader,
-        batch_callback: callable,
         train_params: TrainerParams,
+        batch_callback: Optional[Callable[[], Any]] = None,
         epoch_start: int = 0,
-        weights_folder: Optional[str] = None,
+        weights_folder: str = config.WEIGHTS_FOLDER,
+        epochs: int = 10,
     ) -> None:
         """Train function"""
-        self._init_optimizers(train_params)
-        weights_folder = self._init_weight_folder(weights_folder)
+        self._init_optimizers(train_params, epochs)
+
         self._set_train_mode()
         self._reset_timer()
 
         real = torch.ones(
-            cartoons_loader.batch_size,
+            cartoons_loader.batch_size
+            if cartoons_loader.batch_size is not None
+            else config.DEFAULT_BATCH_SIZE,
             1,
             train_params.input_size // 4,
             train_params.input_size // 4,
         ).to(self.device)
         fake = torch.zeros(
-            cartoons_loader.batch_size,
+            cartoons_loader.batch_size
+            if cartoons_loader.batch_size is not None
+            else config.DEFAULT_BATCH_SIZE,
             1,
             train_params.input_size // 4,
             train_params.input_size // 4,
@@ -115,8 +127,7 @@ class FixedCartoonGANTrainer(Trainer):
 
         scaler = torch.cuda.amp.GradScaler()
 
-        for epoch in range(epoch_start, train_params.epochs + epoch_start):
-            logging.info("Epoch %s/%s", epoch, train_params.epochs)
+        for epoch in range(epoch_start, epochs + epoch_start):
 
             self.gen_scheduler.step()
             self.disc_scheduler.step()

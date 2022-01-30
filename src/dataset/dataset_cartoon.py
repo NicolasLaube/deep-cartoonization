@@ -1,6 +1,9 @@
 """Cartoon dataset Loader"""
-from typing import List
+from typing import Callable
 
+import pandas as pd
+from nptyping import NDArray
+from typing_extensions import Literal
 
 from src import config
 from src.dataset.image_loader import ImageLoader
@@ -11,17 +14,16 @@ class CartoonDataset(ImageLoader):
 
     def __init__(
         self,
-        filter_data: callable,
-        transform: callable,
+        filter_data: Callable[[pd.DataFrame], pd.DataFrame],
+        transform: Callable[[NDArray], NDArray],
         nb_images: int = -1,
-        train: bool = True,
-        test: bool = False,
+        mode: Literal["train", "validation", "test"] = "train",
     ) -> None:
-        self.train = train
-        if train:
+        self.train = mode == "train"
+        if mode == "train":
             csv_path = config.CARTOONS_TRAIN_CSV
-        else:
+        elif mode == "validation":
             csv_path = config.CARTOONS_VALIDATION_CSV
-        if test:
+        elif mode == "test":
             csv_path = config.CARTOONS_TEST_CSV
         ImageLoader.__init__(self, csv_path, filter_data, transform, nb_images)

@@ -1,5 +1,6 @@
-import os
 import csv
+import os
+
 from src import config
 
 
