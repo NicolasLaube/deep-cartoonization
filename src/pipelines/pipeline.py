@@ -1,7 +1,7 @@
 """Pipelines launcher"""
 # pylint: disable=R0902,E1102
+import csv
 import enum
-import json
 import logging
 import os
 import sys
@@ -54,6 +54,7 @@ class Pipeline:
         self.training_params = training_parameters
         self.logs_path: str = None  # type: ignore
         self.losses_path: str = None  # type: ignore
+        self.params: Dict[str, Any] = None  # type: ignore
         self.trainer = self.__init_trainer()
 
         self.pretraining_params = (
@@ -69,7 +70,7 @@ class Pipeline:
         )
 
         # Initialize logs
-        self.params = self.__init_logs()
+        self.__init_logs()
         self.folder_path = os.path.join(config.LOGS_FOLDER, self.params["run_id"])
         self.weights_path = os.path.join(config.WEIGHTS_FOLDER, self.params["run_id"])
 
@@ -239,18 +240,22 @@ class Pipeline:
 
         raise NotImplementedError("Pipeline wasn't implemented")
 
-    def __init_logs(self) -> Dict[str, Any]:
+    def __init_logs(self) -> None:
         """To init the logs folder or to load the training model"""
 
         # Import all fixed params & parameters of all runs
         global_params: Dict[str, Any] = {
             "cartoon_gan_architecture": self.architecture.value,
-            **self.__format_dataclass(self.architecture_params),
-            **self.__format_dataclass(self.cartoons_dataset_parameters),
-            **self.__format_dataclass(self.pictures_dataset_parameters),
-            **self.__format_dataclass(self.pretraining_params),
-            **self.__format_dataclass(self.training_params),
-            **self.__format_dataclass(self.init_models_paths),
+            **self.__format_dataclass(self.architecture_params, "architecture"),
+            **self.__format_dataclass(
+                self.cartoons_dataset_parameters, "cartoon_dataset"
+            ),
+            **self.__format_dataclass(
+                self.pictures_dataset_parameters, "picture_dataset"
+            ),
+            **self.__format_dataclass(self.pretraining_params, "pretraining"),
+            **self.__format_dataclass(self.training_params, "training"),
+            **self.__format_dataclass(self.init_models_paths, "init"),
         }
 
         df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
@@ -278,9 +283,9 @@ class Pipeline:
             checking_df.apply(lambda x: reduce(logical_and, x), axis=1)
         ].index.values
         if len(matching_values) > 0:
-            params = self.__import_logs(df_all_params.iloc[matching_values[0]])
+            self.__import_logs(df_all_params.iloc[matching_values[0]])
         else:
-            self.__create_logs(global_params)
+            self.__create_logs(pd.Series(global_params))
         # We can now create the log file
         log_path = os.path.join(
             self.logs_path,
@@ -297,20 +302,17 @@ class Pipeline:
         )
         logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
-        return params
-
-    def __import_logs(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def __import_logs(self, params: Dict[str, Any]) -> None:
         """Import existing logs"""
 
-        self.params = params
         # Load the parameters
         self.folder_path = os.path.join(config.LOGS_FOLDER, params["run_id"])
         self.logs_path = os.path.join(self.folder_path, "logs")
         self.losses_path = os.path.join(self.folder_path, "losses")
         self.weights_path = os.path.join(config.WEIGHTS_FOLDER, params["run_id"])
         # Load the nb of epochs trained
-        max_epoch_training = self.params["epochs_trained_nb"]
-        max_epoch_pretraining = self.params["epochs_pretrained_nb"]
+        max_epoch_training = params["epochs_trained_nb"]
+        max_epoch_pretraining = params["epochs_pretrained_nb"]
         for file_name in os.listdir(self.weights_path):
             if file_name[:10] == "pretrained":
                 epoch_nb = int(file_name.split(".")[0].split("_")[-1]) - 1
@@ -320,13 +322,11 @@ class Pipeline:
                 max_epoch_training = max(max_epoch_training, epoch_nb)
         params["epochs_pretrained_nb"] = max_epoch_pretraining
         params["epochs_trained_nb"] = max_epoch_training
+        self.params = params
 
-        return params
-
-    def __create_logs(self, global_params) -> None:
+    def __create_logs(self, params: Dict[str, Any]) -> None:
         """To create the logs if they aren't"""
-        # Create the parameters
-        self.params = pd.Series(global_params)
+        self.params = params
         # Create run id
         self.params["run_id"] = Pipeline.__get_time_id()
         # Create nb of epochs trained
@@ -414,7 +414,8 @@ class Pipeline:
                 "a",
                 encoding="utf-8",
             ) as file:
-                file.write(f"{Pipeline.__get_time_id()}; {json.dumps(str_losses)}\n")
+                csv_writer = csv.writer(file)
+                csv_writer.writerow([Pipeline.__get_time_id(), str_losses])
             # Save global loss in global params
             for key, loss in str_losses.items():
                 self.params[f"{train_state}_{key}"] = loss
@@ -449,10 +450,11 @@ class Pipeline:
             TrainerParams,
             ModelPathsParameters,
             dataset.ImageDatasetParameters,
-        ]
+        ],
+        prefix: str,
     ) -> Dict[str, Any]:
         """To add a prefix on all the fields of a dictionary"""
-        return {f"{k}_{v}": v for (k, v) in asdict(data_class).items()}
+        return {f"{prefix}_{k}": v for (k, v) in asdict(data_class).items()}
 
 
 if __name__ == "__main__":
