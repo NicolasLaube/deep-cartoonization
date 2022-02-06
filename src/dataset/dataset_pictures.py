@@ -1,5 +1,6 @@
 """Flickr pictures dataset Loader"""
 from typing import Callable
+from typing_extensions import Literal
 
 import pandas as pd
 from nptyping import NDArray
@@ -16,11 +17,13 @@ class PicturesDataset(ImageLoader):
         filter_data: Callable[[pd.DataFrame], pd.DataFrame],
         transform: Callable[[NDArray], NDArray],
         nb_images: int = -1,
-        train: bool = True,
+        mode: Literal["train", "validation", "test"] = "train",
     ) -> None:
-        self.train = train
-        if train:
+        self.train = mode == "train"
+        if mode == "train":
             csv_path = config.PICTURES_TRAIN_CSV
-        else:
+        elif mode == "validation":
+            csv_path = config.PICTURES_VALIDATION_CSV
+        elif mode == "test":
             csv_path = config.PICTURES_TEST_CSV
         ImageLoader.__init__(self, csv_path, filter_data, transform, nb_images)

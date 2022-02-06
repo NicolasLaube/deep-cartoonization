@@ -21,7 +21,7 @@ class Trainer(ABC):
         self.generator = self.load_generator()
         self.discriminator = self.load_discriminator()
 
-        self.writer = SummaryWriter()
+        self.writer = SummaryWriter("logs/tensorboard")
         self.last_save_time = datetime.now()
 
         self.generator.to(device)
