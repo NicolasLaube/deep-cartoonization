@@ -27,8 +27,8 @@ from src.pipelines.utils import init_device
 class ModelPathsParameters:
     """Model's parameters"""
 
-    generator_path: Optional[str]
-    discriminator_path: Optional[str]
+    gen_path: Optional[str]
+    disc_path: Optional[str]
 
 
 class Pipeline:
@@ -66,7 +66,7 @@ class Pipeline:
         self.init_models_paths = (
             init_models_paths
             if init_models_paths is not None
-            else ModelPathsParameters(generator_path=None, discriminator_path=None)
+            else ModelPathsParameters(gen_path=None, disc_path=None)
         )
 
         # Initialize logs
@@ -388,7 +388,7 @@ class Pipeline:
                 self.params["epochs_trained_nb"] = 0
                 self.__save_params()
                 # ...and we try to load the possible input model
-                if self.init_models_paths.generator_path is not None:
+                if self.init_models_paths.gen_path is not None:
                     model = asdict(self.init_models_paths)
         if model is None:
             logging.info("No model found")
