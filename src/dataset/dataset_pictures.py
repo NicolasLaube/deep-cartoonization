@@ -1,9 +1,9 @@
 """Flickr pictures dataset Loader"""
 from typing import Callable
-from typing_extensions import Literal
 
 import pandas as pd
 from nptyping import NDArray
+from typing_extensions import Literal
 
 from src import config
 from src.dataset.image_loader import ImageLoader

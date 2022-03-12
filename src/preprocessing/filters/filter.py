@@ -7,8 +7,7 @@ import pandas as pd
 from src import config
 from src.preprocessing.filters.low_quality_filter import filter_low_quality
 from src.preprocessing.filters.movie_filter import filter_movies
-from src.preprocessing.filters.ratio_filter import (RatioFilterMode,
-                                                    filter_ratio)
+from src.preprocessing.filters.ratio_filter import RatioFilterMode, filter_ratio
 
 
 class Filter:

@@ -2,6 +2,7 @@ venv
 .vscode
 .env
 .env.local
+.DS_Store
 
 *.pyc
 *.zip

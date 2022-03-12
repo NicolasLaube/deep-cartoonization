@@ -39,7 +39,7 @@ class FixedCartoonGANTrainer(Trainer):
         *,
         pictures_loader: DataLoader,
         pretrain_params: TrainerParams,
-        batch_callback: Optional[Callable[[], Any]] = None,
+        batch_callback: Optional[Callable] = None,
         epoch_start: int = 0,
         weights_folder: str = config.WEIGHTS_FOLDER,
         epochs: int = 10,
@@ -68,18 +68,20 @@ class FixedCartoonGANTrainer(Trainer):
                 scaler.scale(reconstruction_loss).backward()
                 scaler.step(self.gen_optimizer)
 
-                self._save_loss(
-                    step=epoch,
-                    reconstruction_loss=reconstruction_loss,
-                )
                 self._save_weights(
                     os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
                     os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
                 )
 
-                self._callback(batch_callback)
+                callback_args = {
+                    "epoch": epoch,
+                    "losses": {
+                        "reconstruction_loss": reconstruction_loss,
+                    },
+                }
+                self._callback(batch_callback, callback_args)
 
-            self.save_model(
+            self._save_model(
                 os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
                 os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
             )
@@ -102,13 +104,17 @@ class FixedCartoonGANTrainer(Trainer):
         self._reset_timer()
 
         real = torch.ones(
-            cartoons_loader.batch_size,
+            cartoons_loader.batch_size
+            if cartoons_loader.batch_size is not None
+            else config.DEFAULT_BATCH_SIZE,
             1,
             train_params.input_size // 4,
             train_params.input_size // 4,
         ).to(self.device)
         fake = torch.zeros(
-            cartoons_loader.batch_size,
+            cartoons_loader.batch_size
+            if cartoons_loader.batch_size is not None
+            else config.DEFAULT_BATCH_SIZE,
             1,
             train_params.input_size // 4,
             train_params.input_size // 4,
@@ -172,22 +178,23 @@ class FixedCartoonGANTrainer(Trainer):
 
                 scaler.update()
 
-                self._save_loss(
-                    step=epoch,
-                    disc_loss=disc_loss,
-                    content_loss=gen_content_loss,
-                    bce_loss=gen_bce_loss,
-                    gen_loss=gen_loss,
-                )
-
                 self._save_weights(
                     os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
                     os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
                 )
 
-                self._callback(batch_callback)
+                callback_args = {
+                    "epoch": epoch,
+                    "losses": {
+                        "disc_loss": disc_loss,
+                        "content_loss": gen_content_loss,
+                        "bce_loss": gen_bce_loss,
+                        "gen_loss": gen_loss,
+                    },
+                }
+                self._callback(batch_callback, callback_args)
 
-            self.save_model(
+            self._save_model(
                 os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
                 os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
             )

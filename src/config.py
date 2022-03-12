@@ -1,3 +1,4 @@
+# pylint: disable=invalid-name
 import os
 from enum import Enum
 
@@ -81,3 +82,4 @@ VALIDATION_SIZE = 0.15
 RANDOM_STATE = 42
 NUM_WORKERS = 2
 SAVE_EVERY_MIN = 15
+DEFAULT_BATCH_SIZE = 16
