@@ -474,6 +474,7 @@ class Pipeline:
             # Save global loss in global params
             for key, loss in str_losses.items():
                 self.params[f"{train_state}_{key}"] = loss
+            self.params[f"epochs_{train_state}ed_nb"] = epoch
             self.__save_params()
             logging.info("Results for epoch %s saved.", epoch)
 
