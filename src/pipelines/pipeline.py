@@ -408,7 +408,7 @@ class Pipeline:
             )
             if gen_name in os.listdir(self.weights_path):
                 return {
-                    "gene_path": os.path.join(self.weights_path, gen_name),
+                    "gen_path": os.path.join(self.weights_path, gen_name),
                     "disc_path": os.path.join(self.weights_path, disc_name),
                 }
 
