@@ -181,7 +181,7 @@ class Pipeline:
             cartoons_loader_validation=validation_cartoons_loader,
             batch_callback=self.__get_batch_callback(pretrain=False),
             validation_callback=self.__get_validation_callback(pretrain=False),
-            epoch_start=self.params["epochs_pretrained_nb"] + 1,
+            epoch_start=self.params["epochs_trained_nb"] + 1,
             weights_folder=self.weights_path,
             train_params=training_parameters,
             epochs=nb_epochs,
