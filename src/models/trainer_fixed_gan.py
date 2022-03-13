@@ -1,8 +1,9 @@
 """Fixed GAN"""
 # pylint: disable=E1102,R0914
 import os
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, List, Optional
 
+import numpy as np
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -37,9 +38,11 @@ class FixedCartoonGANTrainer(Trainer):
     def pretrain(
         self,
         *,
-        pictures_loader: DataLoader,
+        pictures_loader_train: DataLoader,
+        pictures_loader_validation: DataLoader,
         pretrain_params: TrainerParams,
         batch_callback: Optional[Callable] = None,
+        validation_callback: Optional[Callable] = None,
         epoch_start: int = 0,
         weights_folder: str = config.WEIGHTS_FOLDER,
         epochs: int = 10,
@@ -54,7 +57,7 @@ class FixedCartoonGANTrainer(Trainer):
 
         for epoch in range(epoch_start, epochs + epoch_start):
 
-            for pictures in tqdm(pictures_loader):
+            for pictures in tqdm(pictures_loader_train):
 
                 pictures = pictures.to(self.device)
 
@@ -81,18 +84,47 @@ class FixedCartoonGANTrainer(Trainer):
                 }
                 self._callback(batch_callback, callback_args)
 
+            reconstruction_losses = []
+            with torch.no_grad():
+                for pictures in tqdm(pictures_loader_validation):
+
+                    pictures = pictures.to(self.device)
+
+                    self.generator.zero_grad()
+
+                    with torch.autocast(self.device):
+
+                        gen_cartoons = self.generator(pictures)
+                        reconstruction_loss = content_loss(gen_cartoons, pictures)
+
+                    reconstruction_losses.append(reconstruction_loss)
+
+            mean_reconstruction_loss = np.mean(reconstruction_losses)
+
+            callback_args = {
+                "epoch": epoch,
+                "losses": {
+                    "reconstruction_loss": mean_reconstruction_loss,
+                },
+            }
+            self._callback(validation_callback, callback_args)
+
             self._save_model(
                 os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
                 os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
             )
 
+    # pylint: disable-msg=too-many-statements
     def train(
         self,
         *,
-        pictures_loader: DataLoader,
-        cartoons_loader: DataLoader,
+        pictures_loader_train: DataLoader,
+        pictures_loader_validation: DataLoader,
+        cartoons_loader_train: DataLoader,
+        cartoons_loader_validation: DataLoader,
         train_params: TrainerParams,
         batch_callback: Optional[Callable[[], Any]] = None,
+        validation_callback: Optional[Callable[[], Any]] = None,
         epoch_start: int = 0,
         weights_folder: str = config.WEIGHTS_FOLDER,
         epochs: int = 10,
@@ -104,16 +136,16 @@ class FixedCartoonGANTrainer(Trainer):
         self._reset_timer()
 
         real = torch.ones(
-            cartoons_loader.batch_size
-            if cartoons_loader.batch_size is not None
+            cartoons_loader_train.batch_size
+            if cartoons_loader_train.batch_size is not None
             else config.DEFAULT_BATCH_SIZE,
             1,
             train_params.input_size // 4,
             train_params.input_size // 4,
         ).to(self.device)
         fake = torch.zeros(
-            cartoons_loader.batch_size
-            if cartoons_loader.batch_size is not None
+            cartoons_loader_train.batch_size
+            if cartoons_loader_train.batch_size is not None
             else config.DEFAULT_BATCH_SIZE,
             1,
             train_params.input_size // 4,
@@ -133,7 +165,8 @@ class FixedCartoonGANTrainer(Trainer):
             self.disc_scheduler.step()
 
             for pictures, cartoons in tqdm(
-                zip(pictures_loader, cartoons_loader), total=len(pictures_loader)
+                zip(pictures_loader_train, cartoons_loader_train),
+                total=len(pictures_loader_train),
             ):
 
                 pictures = pictures.to(self.device)
@@ -193,6 +226,59 @@ class FixedCartoonGANTrainer(Trainer):
                     },
                 }
                 self._callback(batch_callback, callback_args)
+
+            losses_lists: Dict[str, List[float]] = {
+                "disc_loss": [],
+                "bce_loss": [],
+                "content_loss": [],
+                "gen_loss": [],
+            }
+            with torch.no_grad():
+                for pictures, cartoons in tqdm(
+                    zip(pictures_loader_validation, cartoons_loader_validation),
+                    total=len(pictures_loader_validation),
+                ):
+
+                    pictures = pictures.to(self.device)
+                    cartoons = cartoons.to(self.device)
+
+                    ############################
+                    # Discriminator validation #
+                    ############################
+
+                    with torch.autocast(self.device):
+                        gen_cartoons = self.generator(pictures)
+
+                        disc_fake = self.discriminator(gen_cartoons.detach())
+                        disc_true = self.discriminator(cartoons)
+
+                        disc_loss = adversarial_loss(disc_true, disc_fake)
+                    losses_lists["disc_loss"].append(disc_loss)
+
+                    ########################
+                    # Generator validation #
+                    ########################
+
+                    with torch.autocast(self.device):
+                        disc_fake = self.discriminator(pictures)
+
+                        gen_bce_loss = bce_loss(disc_fake, fake)
+                        gen_content_loss = content_loss(gen_cartoons, pictures)
+                        gen_loss = gen_bce_loss + gen_content_loss
+                    losses_lists["bce_loss"].append(gen_bce_loss)
+                    losses_lists["content_loss"].append(gen_content_loss)
+                    losses_lists["gen_loss"].append(gen_loss)
+
+            mean_losses = {
+                loss_name: np.mean(values)
+                for (loss_name, values) in losses_lists.items()
+            }
+
+            callback_args = {
+                "epoch": epoch,
+                "losses": mean_losses,
+            }
+            self._callback(validation_callback, callback_args)
 
             self._save_model(
                 os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
