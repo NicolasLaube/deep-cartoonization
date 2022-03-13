@@ -43,7 +43,7 @@ class FixedCartoonGANTrainer(Trainer):
         pretrain_params: TrainerParams,
         batch_callback: Optional[Callable] = None,
         validation_callback: Optional[Callable] = None,
-        epoch_start: int = 0,
+        epoch_start: int = 1,
         weights_folder: str = config.WEIGHTS_FOLDER,
         epochs: int = 10,
     ) -> None:
@@ -54,6 +54,8 @@ class FixedCartoonGANTrainer(Trainer):
 
         content_loss = ContentLoss().to(self.device)
         scaler = torch.cuda.amp.GradScaler()
+
+        step = (epoch_start - 1) * len(pictures_loader_train)
 
         for epoch in range(epoch_start, epochs + epoch_start):
 
@@ -78,11 +80,14 @@ class FixedCartoonGANTrainer(Trainer):
 
                 callback_args = {
                     "epoch": epoch,
+                    "step": step,
                     "losses": {
                         "reconstruction_loss": reconstruction_loss,
                     },
                 }
                 self._callback(batch_callback, callback_args)
+
+                step += 1
 
             reconstruction_losses = []
             with torch.no_grad():
@@ -97,7 +102,9 @@ class FixedCartoonGANTrainer(Trainer):
                         gen_cartoons = self.generator(pictures)
                         reconstruction_loss = content_loss(gen_cartoons, pictures)
 
-                    reconstruction_losses.append(reconstruction_loss)
+                    reconstruction_losses.append(
+                        reconstruction_loss.cpu().detach().numpy()
+                    )
 
             mean_reconstruction_loss = np.mean(reconstruction_losses)
 
@@ -125,7 +132,7 @@ class FixedCartoonGANTrainer(Trainer):
         train_params: TrainerParams,
         batch_callback: Optional[Callable[[], Any]] = None,
         validation_callback: Optional[Callable[[], Any]] = None,
-        epoch_start: int = 0,
+        epoch_start: int = 1,
         weights_folder: str = config.WEIGHTS_FOLDER,
         epochs: int = 10,
     ) -> None:
@@ -158,6 +165,8 @@ class FixedCartoonGANTrainer(Trainer):
         adversarial_loss = AdversarialLoss(real, fake).to(self.device)
 
         scaler = torch.cuda.amp.GradScaler()
+
+        step = (epoch_start - 1) * len(pictures_loader_train)
 
         for epoch in range(epoch_start, epochs + epoch_start):
 
@@ -218,6 +227,7 @@ class FixedCartoonGANTrainer(Trainer):
 
                 callback_args = {
                     "epoch": epoch,
+                    "step": step,
                     "losses": {
                         "disc_loss": disc_loss,
                         "content_loss": gen_content_loss,
@@ -226,6 +236,8 @@ class FixedCartoonGANTrainer(Trainer):
                     },
                 }
                 self._callback(batch_callback, callback_args)
+
+                step += 1
 
             losses_lists: Dict[str, List[float]] = {
                 "disc_loss": [],
@@ -253,7 +265,7 @@ class FixedCartoonGANTrainer(Trainer):
                         disc_true = self.discriminator(cartoons)
 
                         disc_loss = adversarial_loss(disc_true, disc_fake)
-                    losses_lists["disc_loss"].append(disc_loss)
+                    losses_lists["disc_loss"].append(disc_loss.cpu().detach().numpy())
 
                     ########################
                     # Generator validation #
@@ -265,9 +277,11 @@ class FixedCartoonGANTrainer(Trainer):
                         gen_bce_loss = bce_loss(disc_fake, fake)
                         gen_content_loss = content_loss(gen_cartoons, pictures)
                         gen_loss = gen_bce_loss + gen_content_loss
-                    losses_lists["bce_loss"].append(gen_bce_loss)
-                    losses_lists["content_loss"].append(gen_content_loss)
-                    losses_lists["gen_loss"].append(gen_loss)
+                    losses_lists["bce_loss"].append(gen_bce_loss.cpu().detach().numpy())
+                    losses_lists["content_loss"].append(
+                        gen_content_loss.cpu().detach().numpy()
+                    )
+                    losses_lists["gen_loss"].append(gen_loss.cpu().detach().numpy())
 
             mean_losses = {
                 loss_name: np.mean(values)

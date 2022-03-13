@@ -440,10 +440,10 @@ class Pipeline:
             f"logs/tensorboard/{self.params['run_id']}_{train_state}"
         )
 
-        def callback(epoch: int, losses: Dict[str, Any]):
+        def callback(epoch: int, step: int, losses: Dict[str, Any]):
             # Save losses in tensorboard
             for key, loss in losses.items():
-                writer.add_scalar(key, loss, global_step=epoch)
+                writer.add_scalar(key, loss, global_step=step)
             # Save losses in file
             str_losses = {k: loss.item() for k, loss in losses.items()}
             with open(
