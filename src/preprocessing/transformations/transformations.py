@@ -17,18 +17,26 @@ class Transform:
         architecture: Architecture,
         new_size: Optional[Tuple[int, int]] = (256, 256),
         crop_mode: resize.CropMode = resize.CropMode.RESIZE,
+        device: str = "cpu",
     ) -> None:
         self.architecture = architecture
         self.new_size = new_size
         self.crop_mode = crop_mode.value
+        self.device = device
         self.normalizer = self.__init_normalizer()
 
     def __init_normalizer(self) -> Normalizer:
         """Initialize normalizer"""
         if self.architecture == Architecture.GANFixed:
-            return Normalizer(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+            return Normalizer(
+                mean=(0.485, 0.456, 0.406),
+                std=(0.229, 0.224, 0.225),
+                device=self.device,
+            )
         if self.architecture == Architecture.GANModular:
-            return Normalizer(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
+            return Normalizer(
+                mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), device=self.device
+            )
 
         raise NotImplementedError("Normalizer wasn't implemented for this architecture")
 
@@ -36,18 +44,36 @@ class Transform:
         self, image: NDArray[(Any, Any), np.int32]
     ) -> NDArray[(Any, Any), np.int32]:
         """Transform cartoon frames"""
-        return self.__main_filter(image)
+        return self.__main_transformer(image)
 
     def picture_transform(
         self, image: NDArray[(Any, Any), np.int32]
     ) -> NDArray[(Any, Any), np.int32]:
         """Transform pictures"""
-        return self.__main_filter(image)
+        return self.__main_transformer(image)
 
-    def __main_filter(
+    def cartoon_untransform(
+        self, image: NDArray[(Any, Any), np.int32]
+    ) -> NDArray[(Any, Any), np.int32]:
+        """Untransform cartoon frames"""
+        return self.__main_untransformer(image)
+
+    def picture_untransform(
+        self, image: NDArray[(Any, Any), np.int32]
+    ) -> NDArray[(Any, Any), np.int32]:
+        """Untransform pictures"""
+        return self.__main_untransformer(image)
+
+    def __main_transformer(
         self, image: NDArray[(Any, Any), np.int32]
     ) -> NDArray[(Any, Any), np.int32]:
         """Transform images (functions that are common to both frame and picture preprocessing)"""
         image = resize.resize(image, self.new_size, self.crop_mode)
 
         return self.normalizer.normalize(image)
+
+    def __main_untransformer(
+        self, image: NDArray[(Any, Any), np.int32]
+    ) -> NDArray[(Any, Any), np.int32]:
+        """Untransform images (functions that are common to both frame and picture preprocessing)"""
+        return np.moveaxis(self.normalizer.inv_normalize(image).numpy(), 0, 2)

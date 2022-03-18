@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from nptyping import NDArray
 from numpy import logical_and
+from PIL import Image
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
@@ -21,6 +22,7 @@ from src import config, dataset, models, preprocessing
 from src.base.base_trainer import Trainer
 from src.models.utils.parameters import ArchitectureParams, TrainerParams
 from src.pipelines.utils import init_device
+from src.preprocessing.transformations.transformations import Transform
 
 
 @dataclass
@@ -187,21 +189,29 @@ class Pipeline:
             epochs=nb_epochs,
         )
 
-    def cartoonize_images(
+    def get_cartoonized_images(
         self, nb_images: int = -1
-    ) -> List[NDArray[(3, Any, Any), np.int32]]:
+    ) -> List[Dict[str, NDArray[(3, Any, Any), np.int32]]]:
         """To show some cartoonized images"""
+
+        transformer = Transform(
+            architecture=self.architecture,
+            new_size=self.cartoons_dataset_parameters.new_size,
+            crop_mode=self.cartoons_dataset_parameters.crop_mode,
+            device=self.device,
+        )
 
         predictor = models.Predictor(
             architecture=self.architecture,
             architecture_params=self.architecture_params,
+            transformer=transformer,
             device=self.device,
         )
 
         models_to_load_paths = self.__get_model_to_load()
 
         if models_to_load_paths is not None:
-            predictor.load_weights(**models_to_load_paths)
+            predictor.load_weights(gen_path=models_to_load_paths["gen_path"])
 
         pictures_dataset = self.__init_pictures_dataset(train=False)
 
@@ -216,6 +226,41 @@ class Pipeline:
         return predictor.cartoonize_dataset(
             pictures_loader=test_pictures_loader, nb_images=nb_images
         )
+
+    def cartoonize_images(
+        self, pictures: List[NDArray[(3, Any, Any), np.int32]]
+    ) -> List[Dict[str, NDArray[(3, Any, Any), np.int32]]]:
+        """To show some cartoonized images"""
+
+        transformer = Transform(
+            architecture=self.architecture,
+            new_size=self.cartoons_dataset_parameters.new_size,
+            crop_mode=self.cartoons_dataset_parameters.crop_mode,
+            device=self.device,
+        )
+
+        predictor = models.Predictor(
+            architecture=self.architecture,
+            architecture_params=self.architecture_params,
+            transformer=transformer,
+            device=self.device,
+        )
+
+        models_to_load_paths = self.__get_model_to_load()
+
+        if models_to_load_paths is not None:
+            predictor.load_weights(gen_path=models_to_load_paths["gen_path"])
+
+        return predictor.cartoonize(pictures=pictures)
+
+    def cartoonize_images_from_path(
+        self, paths: List[str]
+    ) -> List[Dict[str, NDArray[(3, Any, Any), np.int32]]]:
+        """To show some cartoonized images from their path"""
+
+        pictures = [Image.open(path) for path in paths]
+
+        return self.cartoonize_images(pictures)
 
     ###########################
     ### About initilization ###
