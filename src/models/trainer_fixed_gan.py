@@ -190,13 +190,13 @@ class FixedCartoonGANTrainer(Trainer):
                 for param in self.discriminator.parameters():
                     param.requires_grad = True
 
-                with torch.autocast(self.device):
-                    gen_cartoons = self.generator(pictures)
+                # with torch.autocast(self.device):
+                gen_cartoons = self.generator(pictures)
 
-                    disc_fake = self.discriminator(gen_cartoons.detach())
-                    disc_true = self.discriminator(cartoons)
+                disc_fake = self.discriminator(gen_cartoons.detach())
+                disc_true = self.discriminator(cartoons)
 
-                    disc_loss = adversarial_loss(disc_true, disc_fake)
+                disc_loss = adversarial_loss(disc_true, disc_fake)
 
                 scaler.scale(disc_loss).backward()
                 scaler.step(self.disc_optimizer)
