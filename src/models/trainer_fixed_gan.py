@@ -162,7 +162,7 @@ class FixedCartoonGANTrainer(Trainer):
 
         # Intialize losses
         content_loss = ContentLoss().to(self.device)
-        bce_loss = nn.BCEWithLogitsLoss().to(self.device)
+        bce_loss = nn.BCELoss().to(self.device)
         adversarial_loss = AdversarialLoss(real, fake).to(self.device)
 
         scaler = torch.cuda.amp.GradScaler()

@@ -23,7 +23,7 @@ class FixedDiscriminator(nn.Module):
             nn.BatchNorm2d(256),
             nn.LeakyReLU(NEG_SLOPE, inplace=True),
             conv3x3(256, 1, stride=1),  # ??
-            # nn.Sigmoid(),  # ??
+            nn.Sigmoid(),  # ??
         )
 
     def forward(self, x):
