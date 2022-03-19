@@ -579,4 +579,4 @@ if __name__ == "__main__":
         pretraining_parameters=models.TrainerParams(batch_size=2),
     )
 
-    pipeline.train(2)
+    pipeline.pretrain(2)
