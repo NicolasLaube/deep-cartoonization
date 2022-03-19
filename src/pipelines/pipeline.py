@@ -574,9 +574,12 @@ if __name__ == "__main__":
             ratio_filter_mode=preprocessing.RatioFilterMode.NO_FILTER,
             nb_images=4,
         ),
-        init_models_paths=None,
+        init_models_paths=ModelPathsParameters(
+            gen_path="weights/pretrained/trained_netG.pth",
+            disc_path="weights/pretrained/trained_netD.pth",
+        ),
         training_parameters=models.TrainerParams(batch_size=2),
         pretraining_parameters=models.TrainerParams(batch_size=2),
     )
 
-    pipeline.pretrain(2)
+    pipeline.train(2)
