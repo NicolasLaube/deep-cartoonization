@@ -259,25 +259,25 @@ class FixedCartoonGANTrainer(Trainer):
                     # Discriminator validation #
                     ############################
 
-                    with torch.autocast(self.device):
-                        gen_cartoons = self.generator(pictures)
+                    # with torch.autocast(self.device):
+                    gen_cartoons = self.generator(pictures)
 
-                        disc_fake = self.discriminator(gen_cartoons.detach())
-                        disc_true = self.discriminator(cartoons)
+                    disc_fake = self.discriminator(gen_cartoons.detach())
+                    disc_true = self.discriminator(cartoons)
 
-                        disc_loss = adversarial_loss(disc_true, disc_fake)
+                    disc_loss = adversarial_loss(disc_true, disc_fake)
                     losses_lists["disc_loss"].append(disc_loss.cpu().detach().numpy())
 
                     ########################
                     # Generator validation #
                     ########################
 
-                    with torch.autocast(self.device):
-                        disc_fake = self.discriminator(pictures)
+                    # with torch.autocast(self.device):
+                    disc_fake = self.discriminator(pictures)
 
-                        gen_bce_loss = bce_loss(disc_fake, fake)
-                        gen_content_loss = content_loss(gen_cartoons, pictures)
-                        gen_loss = gen_bce_loss + gen_content_loss
+                    gen_bce_loss = bce_loss(disc_fake, fake)
+                    gen_content_loss = content_loss(gen_cartoons, pictures)
+                    gen_loss = gen_bce_loss + gen_content_loss
                     losses_lists["bce_loss"].append(gen_bce_loss.cpu().detach().numpy())
                     losses_lists["content_loss"].append(
                         gen_content_loss.cpu().detach().numpy()
