@@ -35,10 +35,13 @@ class Trainer(ABC):
     def train(
         self,
         *,
-        pictures_loader: DataLoader,
-        cartoons_loader: DataLoader,
+        pictures_loader_train: DataLoader,
+        pictures_loader_validation: DataLoader,
+        cartoons_loader_train: DataLoader,
+        cartoons_loader_validation: DataLoader,
         train_params: TrainerParams,
         batch_callback: Optional[Callable] = None,
+        validation_callback: Optional[Callable[[], Any]] = None,
         epoch_start: int = 0,
         weights_folder: str = config.WEIGHTS_FOLDER,
         epochs: int = 10
@@ -49,9 +52,11 @@ class Trainer(ABC):
     def pretrain(
         self,
         *,
-        pictures_loader: DataLoader,
+        pictures_loader_train: DataLoader,
+        pictures_loader_validation: DataLoader,
         pretrain_params: TrainerParams,
         batch_callback: Optional[Callable] = None,
+        validation_callback: Optional[Callable] = None,
         epoch_start: int = 0,
         weights_folder: str = config.WEIGHTS_FOLDER,
         epochs: int = 10

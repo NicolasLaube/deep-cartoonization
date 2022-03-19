@@ -1,6 +1,6 @@
 """Predictor"""
 from abc import ABC
-from typing import Any, List
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
@@ -19,6 +19,7 @@ class Predictor(ABC):
         self,
         architecture: Architecture,
         architecture_params: ArchitectureParams,
+        transformer: Any,
         device: str,
     ) -> None:
         """Initialize predictor class"""
@@ -26,11 +27,16 @@ class Predictor(ABC):
         self.architecture = architecture
         self.architecture_parameters = architecture_params
         self.model = self.__load_model()
+        self.transformer = transformer
 
-    def load_weights(self, gen_path: str, disc_path: str):
-        """Load weights"""
-        self.model.load_state_dict(gen_path)
-        print(disc_path)
+    def load_weights(self, gen_path: str) -> None:
+        """Load the model from weights"""
+        if torch.cuda.is_available():
+            self.model.load_state_dict(torch.load(gen_path))
+        else:
+            self.model.load_state_dict(
+                torch.load(gen_path, map_location=lambda storage, loc: storage)
+            )
 
     def __load_model(self):
         """Loads model"""
@@ -59,22 +65,33 @@ class Predictor(ABC):
         with torch.no_grad():
             self.model.eval()
             for picture in tqdm(pictures):
-                picture = picture.to(self.device)
-                cartoons.extend(self.model(picture))
+                picture = self.transformer.picture_transform(picture)[None]
+                cartoons.append(
+                    self.transformer.cartoon_untransform(self.model(picture).squeeze())
+                )
 
         return cartoons
 
     def cartoonize_dataset(
         self, pictures_loader: DataLoader, nb_images: int = -1
-    ) -> List[NDArray[(3, Any, Any), np.int32]]:
+    ) -> List[Dict[str, NDArray[(3, Any, Any), np.int32]]]:
         """Cartoonize pictures dataset"""
-        cartoons = []
+        images_with_cartoons = []
         with torch.no_grad():
             self.model.eval()
             for pictures_batch in tqdm(pictures_loader):
                 pictures_batch = pictures_batch.to(self.device)
-                cartoons.extend(self.model(pictures_batch))
-                if len(cartoons) >= nb_images >= 0:
+                to_add = [
+                    {
+                        "picture": self.transformer.picture_untransform(image),
+                        "cartoon": self.transformer.cartoon_untransform(cartoon),
+                    }
+                    for (image, cartoon) in zip(
+                        pictures_batch, self.model(pictures_batch)
+                    )
+                ]
+                images_with_cartoons.extend(to_add)
+                if len(images_with_cartoons) >= nb_images >= 0:
                     break
 
-        return cartoons
+        return images_with_cartoons

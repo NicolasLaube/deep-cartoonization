@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from nptyping import NDArray
 from numpy import logical_and
+from PIL import Image
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
@@ -21,6 +22,7 @@ from src import config, dataset, models, preprocessing
 from src.base.base_trainer import Trainer
 from src.models.utils.parameters import ArchitectureParams, TrainerParams
 from src.pipelines.utils import init_device
+from src.preprocessing.transformations.transformations import Transform
 
 
 @dataclass
@@ -85,10 +87,19 @@ class Pipeline:
         if models_to_load_paths is not None:
             self.trainer.load_model(**models_to_load_paths)
 
-        pictures_dataset = self.__init_pictures_dataset(train=True)
+        train_pictures_dataset = self.__init_pictures_dataset(train=True)
+        validation_pictures_dataset = self.__init_pictures_dataset(train=False)
 
         train_pictures_loader = DataLoader(
-            dataset=pictures_dataset,
+            dataset=train_pictures_dataset,
+            batch_size=self.pretraining_params.batch_size,
+            shuffle=True,
+            # drop last incomplete batch
+            drop_last=True,
+            num_workers=config.NUM_WORKERS,
+        )
+        validation_pictures_loader = DataLoader(
+            dataset=validation_pictures_dataset,
             batch_size=self.pretraining_params.batch_size,
             shuffle=True,
             # drop last incomplete batch
@@ -97,8 +108,10 @@ class Pipeline:
         )
 
         self.trainer.pretrain(
-            pictures_loader=train_pictures_loader,
-            batch_callback=self.__get_callback(pretrain=True),
+            pictures_loader_train=train_pictures_loader,
+            pictures_loader_validation=validation_pictures_loader,
+            batch_callback=self.__get_batch_callback(pretrain=True),
+            validation_callback=self.__get_validation_callback(pretrain=True),
             epoch_start=self.params["epochs_pretrained_nb"] + 1,
             weights_folder=self.weights_path,
             pretrain_params=pretraining_parameters,
@@ -116,11 +129,21 @@ class Pipeline:
         if models_to_load_paths is not None:
             self.trainer.load_model(**models_to_load_paths)
 
-        pictures_dataset = self.__init_pictures_dataset(train=True)
-        cartoons_dataset = self.__init_cartoons_dataset(train=True)
+        train_pictures_dataset = self.__init_pictures_dataset(train=True)
+        validation_pictures_dataset = self.__init_pictures_dataset(train=False)
+        train_cartoons_dataset = self.__init_cartoons_dataset(train=True)
+        validation_cartoons_dataset = self.__init_cartoons_dataset(train=False)
 
         train_cartoons_loader = DataLoader(
-            dataset=cartoons_dataset,
+            dataset=train_cartoons_dataset,
+            batch_size=self.training_params.batch_size,
+            shuffle=True,
+            drop_last=True,
+            num_workers=config.NUM_WORKERS,
+        )
+
+        validation_cartoons_loader = DataLoader(
+            dataset=validation_cartoons_dataset,
             batch_size=self.training_params.batch_size,
             shuffle=True,
             drop_last=True,
@@ -128,43 +151,67 @@ class Pipeline:
         )
 
         train_pictures_loader = DataLoader(
-            dataset=pictures_dataset,
+            dataset=train_pictures_dataset,
             batch_size=self.training_params.batch_size,
             shuffle=True,
             drop_last=True,
             num_workers=config.NUM_WORKERS,
         )
 
-        nb_images = min(len(pictures_dataset), len(cartoons_dataset))
+        validation_pictures_loader = DataLoader(
+            dataset=validation_pictures_dataset,
+            batch_size=self.training_params.batch_size,
+            shuffle=True,
+            drop_last=True,
+            num_workers=config.NUM_WORKERS,
+        )
+
+        nb_images_train = min(len(train_pictures_dataset), len(train_cartoons_dataset))
+        nb_images_validation = min(
+            len(validation_pictures_dataset), len(validation_cartoons_dataset)
+        )
         # datasets should have the same size
-        pictures_dataset.set_nb_images(nb_images)
-        cartoons_dataset.set_nb_images(nb_images)
+        train_pictures_dataset.set_nb_images(nb_images_train)
+        train_cartoons_dataset.set_nb_images(nb_images_train)
+        validation_pictures_dataset.set_nb_images(nb_images_validation)
+        validation_cartoons_dataset.set_nb_images(nb_images_validation)
 
         self.trainer.train(
-            pictures_loader=train_pictures_loader,
-            cartoons_loader=train_cartoons_loader,
-            batch_callback=self.__get_callback(pretrain=False),
-            epoch_start=self.params["epochs_pretrained_nb"] + 1,
+            pictures_loader_train=train_pictures_loader,
+            pictures_loader_validation=validation_pictures_loader,
+            cartoons_loader_train=train_cartoons_loader,
+            cartoons_loader_validation=validation_cartoons_loader,
+            batch_callback=self.__get_batch_callback(pretrain=False),
+            validation_callback=self.__get_validation_callback(pretrain=False),
+            epoch_start=self.params["epochs_trained_nb"] + 1,
             weights_folder=self.weights_path,
             train_params=training_parameters,
             epochs=nb_epochs,
         )
 
-    def cartoonize_images(
+    def get_cartoonized_images(
         self, nb_images: int = -1
-    ) -> List[NDArray[(3, Any, Any), np.int32]]:
+    ) -> List[Dict[str, NDArray[(3, Any, Any), np.int32]]]:
         """To show some cartoonized images"""
+
+        transformer = Transform(
+            architecture=self.architecture,
+            new_size=self.cartoons_dataset_parameters.new_size,
+            crop_mode=self.cartoons_dataset_parameters.crop_mode,
+            device=self.device,
+        )
 
         predictor = models.Predictor(
             architecture=self.architecture,
             architecture_params=self.architecture_params,
+            transformer=transformer,
             device=self.device,
         )
 
         models_to_load_paths = self.__get_model_to_load()
 
         if models_to_load_paths is not None:
-            predictor.load_weights(**models_to_load_paths)
+            predictor.load_weights(gen_path=models_to_load_paths["gen_path"])
 
         pictures_dataset = self.__init_pictures_dataset(train=False)
 
@@ -179,6 +226,41 @@ class Pipeline:
         return predictor.cartoonize_dataset(
             pictures_loader=test_pictures_loader, nb_images=nb_images
         )
+
+    def cartoonize_images(
+        self, pictures: List[NDArray[(3, Any, Any), np.int32]]
+    ) -> List[Dict[str, NDArray[(3, Any, Any), np.int32]]]:
+        """To show some cartoonized images"""
+
+        transformer = Transform(
+            architecture=self.architecture,
+            new_size=self.cartoons_dataset_parameters.new_size,
+            crop_mode=self.cartoons_dataset_parameters.crop_mode,
+            device=self.device,
+        )
+
+        predictor = models.Predictor(
+            architecture=self.architecture,
+            architecture_params=self.architecture_params,
+            transformer=transformer,
+            device=self.device,
+        )
+
+        models_to_load_paths = self.__get_model_to_load()
+
+        if models_to_load_paths is not None:
+            predictor.load_weights(gen_path=models_to_load_paths["gen_path"])
+
+        return predictor.cartoonize(pictures=pictures)
+
+    def cartoonize_images_from_path(
+        self, paths: List[str]
+    ) -> List[Dict[str, NDArray[(3, Any, Any), np.int32]]]:
+        """To show some cartoonized images from their path"""
+
+        pictures = [Image.open(path) for path in paths]
+
+        return self.cartoonize_images(pictures)
 
     ###########################
     ### About initilization ###
@@ -371,7 +453,7 @@ class Pipeline:
             )
             if gen_name in os.listdir(self.weights_path):
                 return {
-                    "gene_path": os.path.join(self.weights_path, gen_name),
+                    "gen_path": os.path.join(self.weights_path, gen_name),
                     "disc_path": os.path.join(self.weights_path, disc_name),
                 }
 
@@ -396,17 +478,17 @@ class Pipeline:
             logging.info("Model found.")
         return model
 
-    def __get_callback(self, pretrain: bool = False):
-        """Return callback for pretrain/train"""
+    def __get_batch_callback(self, pretrain: bool = False):
+        """Return batch callback for pretrain/train"""
         train_state = "pretrain" if pretrain else "train"
         writer = SummaryWriter(
             f"logs/tensorboard/{self.params['run_id']}_{train_state}"
         )
 
-        def callback(epoch: int, losses: Dict[str, Any]):
+        def callback(epoch: int, step: int, losses: Dict[str, Any]):
             # Save losses in tensorboard
             for key, loss in losses.items():
-                writer.add_scalar(key, loss, global_step=epoch)
+                writer.add_scalar(key, loss, global_step=step)
             # Save losses in file
             str_losses = {k: loss.item() for k, loss in losses.items()}
             with open(
@@ -416,10 +498,30 @@ class Pipeline:
             ) as file:
                 csv_writer = csv.writer(file)
                 csv_writer.writerow([Pipeline.__get_time_id(), str_losses])
+
+        return callback
+
+    def __get_validation_callback(self, pretrain: bool = False):
+        """Return validation callback for pretrain/train"""
+        train_state = "pretrain" if pretrain else "train"
+
+        def callback(epoch: int, losses: Dict[str, Any]):
+            # Save losses in file
+            str_losses = {k: loss.item() for k, loss in losses.items()}
+            to_write = {"epoch": epoch, **str_losses}
+            with open(
+                os.path.join(self.losses_path, f"{train_state}_validation.txt"),
+                "a",
+                encoding="utf-8",
+            ) as file:
+                csv_writer = csv.writer(file)
+                csv_writer.writerow([Pipeline.__get_time_id(), to_write])
             # Save global loss in global params
             for key, loss in str_losses.items():
                 self.params[f"{train_state}_{key}"] = loss
+            self.params[f"epochs_{train_state}ed_nb"] = epoch
             self.__save_params()
+            logging.info("Results for epoch %s saved.", epoch)
 
         return callback
 
@@ -464,15 +566,17 @@ if __name__ == "__main__":
         cartoons_dataset_parameters=dataset.CartoonsDatasetParameters(
             new_size=(256, 256),
             crop_mode=preprocessing.CropMode.CROP_CENTER,
+            nb_images=4,
         ),
         pictures_dataset_parameters=dataset.PicturesDatasetParameters(
             new_size=(256, 256),
             crop_mode=preprocessing.CropMode.CROP_CENTER,
             ratio_filter_mode=preprocessing.RatioFilterMode.NO_FILTER,
+            nb_images=4,
         ),
         init_models_paths=None,
-        training_parameters=models.TrainerParams(),
-        pretraining_parameters=models.TrainerParams(),
+        training_parameters=models.TrainerParams(batch_size=2),
+        pretraining_parameters=models.TrainerParams(batch_size=2),
     )
 
-    pipeline.train(10)
+    pipeline.train(2)
