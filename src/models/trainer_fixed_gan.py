@@ -72,6 +72,7 @@ class FixedCartoonGANTrainer(Trainer):
 
                 scaler.scale(reconstruction_loss).backward()
                 scaler.step(self.gen_optimizer)
+                scaler.update()
 
                 self._save_weights(
                     os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
