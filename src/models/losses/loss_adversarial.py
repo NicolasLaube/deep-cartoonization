@@ -6,7 +6,7 @@ class AdversarialLoss(nn.Module):
         super(AdversarialLoss, self).__init__()
         self.cartoon_labels = real_labels
         self.fake_labels = fake_labels
-        self.base_loss = nn.BCEWithLogitsLoss()
+        self.base_loss = nn.BCELoss()
 
     def forward(self, real_cartoons, gen_cartoons, edged=None):
         # print(cartoon.shape, self.cartoon_labels.shape)
