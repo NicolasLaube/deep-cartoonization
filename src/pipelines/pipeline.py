@@ -316,8 +316,8 @@ class Pipeline:
             assert isinstance(
                 self.architecture_params, models.ArchitectureParamsModular
             ), "Modular architecture requires modular params"
-            return models.FixedCartoonGANTrainer(
-                self.architecture_params, device=self.device
+            return models.ModularGANTrainer(
+                device=self.device, architecture_params=self.architecture_params
             )
 
         raise NotImplementedError("Pipeline wasn't implemented")
@@ -559,10 +559,11 @@ class Pipeline:
         return {f"{prefix}_{k}": v for (k, v) in asdict(data_class).items()}
 
 
+
 if __name__ == "__main__":
     pipeline = Pipeline(
-        architecture=models.Architecture.GANFixed,
-        architecture_params=models.ArchitectureParamsNULL(),
+        architecture=models.Architecture.GANModular,
+        architecture_params=models.ArchitectureParamsModular(),
         cartoons_dataset_parameters=dataset.CartoonsDatasetParameters(
             new_size=(256, 256),
             crop_mode=preprocessing.CropMode.CROP_CENTER,

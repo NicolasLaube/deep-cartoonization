@@ -7,3 +7,4 @@ from src.models.utils.parameters import (
     TrainerParams,
 )
 from src.models.trainer_fixed_gan import FixedCartoonGANTrainer
+from src.models.trainer_modular_gan import ModularGANTrainer
