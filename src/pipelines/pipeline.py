@@ -559,7 +559,6 @@ class Pipeline:
         return {f"{prefix}_{k}": v for (k, v) in asdict(data_class).items()}
 
 
-
 if __name__ == "__main__":
     pipeline = Pipeline(
         architecture=models.Architecture.GANModular,

@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from time import time
 from typing import Any, Callable
+
 import numpy as np
 import torch
 from torch import nn
@@ -14,8 +15,8 @@ from src import config
 from src.base.base_trainer import Trainer
 from src.models.discriminators.discriminator_modular import ModularDiscriminator
 from src.models.generators.generator_modular import ModularGenerator
-from src.models.utils.vgg19 import VGG19
 from src.models.utils.parameters import ArchitectureParams, TrainerParams
+from src.models.utils.vgg19 import VGG19
 
 
 class ModularGANTrainer(Trainer):
