@@ -210,11 +210,11 @@ class FixedCartoonGANTrainer(Trainer):
                     param.requires_grad = False
 
                 # with torch.autocast(self.device):
-                disc_fake = self.discriminator(pictures)
+                disc_fake = self.discriminator(gen_cartoons)
 
                 gen_bce_loss = bce_loss(disc_fake, fake)
-                # gen_content_loss = content_loss(gen_cartoons, pictures)
-                gen_loss = gen_bce_loss  # + gen_content_loss
+                gen_content_loss = content_loss(gen_cartoons, pictures)
+                gen_loss = gen_bce_loss + gen_content_loss
 
                 scaler.scale(gen_loss).backward()
                 scaler.step(self.gen_optimizer)
