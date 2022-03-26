@@ -16,7 +16,7 @@ def gram(input_matrix):
     """
     bacth, channels, width, height = input_matrix.size()
 
-    x = input.view(bacth * channels, width * height)
+    x = input_matrix.view(bacth * channels, width * height)
 
     gram_matrix = torch.mm(x, x.T)
 

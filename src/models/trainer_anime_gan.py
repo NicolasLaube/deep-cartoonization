@@ -75,7 +75,7 @@ class TrainerAnimeGAN(Trainer):
         self._reset_timer()
 
         # Intialize losses
-        loss_fn = AnimeGanLoss()
+        loss_fn = AnimeGanLoss(device=self.device)
         # anime gan loss params could be changed in the future
 
         step = (epoch_start - 1) * len(pictures_loader_train)
