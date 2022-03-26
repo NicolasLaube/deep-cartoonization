@@ -1,14 +1,20 @@
+"""Parameters for the model."""
+# pylint: disable=C0103, R0913, R0902
 from __future__ import annotations
-from dataclasses import dataclass
+
 import enum
+from dataclasses import dataclass
 from typing import Optional
 
 
 class Architecture(enum.Enum):
+    """Architectures"""
+
     GANStyle = "Style Gan"
     GANUNet = "UNet GAN"
     GANFixed = "Fixed GAN"
     GANModular = "Modular GAN"
+    GANAnime = "Anime GAN"
 
 
 #############################
@@ -18,16 +24,18 @@ class Architecture(enum.Enum):
 
 @dataclass
 class ArchitectureParams:
-    pass
+    """Architecture params"""
 
 
 @dataclass
 class ArchitectureParamsNULL(ArchitectureParams):
-    pass
+    """Null architecture params"""
 
 
 @dataclass
 class ArchitectureParamsModular(ArchitectureParams):
+    """Architecture params for Modular GAN"""
+
     nb_resnet_blocks: Optional[int] = 8
     nb_channels_picture: Optional[int] = 3
     nb_channels_cartoon: Optional[int] = 3
@@ -37,6 +45,8 @@ class ArchitectureParamsModular(ArchitectureParams):
 
 @dataclass
 class TrainerParams:
+    """Trainer parameters"""
+
     gen_lr: float = 1e-4
     disc_lr: float = 1e-4
     batch_size: int = 16
@@ -49,6 +59,8 @@ class TrainerParams:
 
 @dataclass
 class CartoonGanLossParameters:
+    """Cartoon GAN loss parameters"""
+
     discriminator_loss: float
     generator_loss: float
     conditional_loss: float

@@ -1,4 +1,5 @@
 """Cartoon dataset Loader"""
+# pylint: disable=R0913
 from typing import Callable
 
 import pandas as pd
@@ -18,6 +19,8 @@ class CartoonDataset(ImageLoader):
         transform: Callable[[NDArray], NDArray],
         nb_images: int = -1,
         mode: Literal["train", "validation", "test"] = "train",
+        smooth: bool = False,
+        gray: bool = False,
     ) -> None:
         self.train = mode == "train"
         if mode == "train":
@@ -26,4 +29,31 @@ class CartoonDataset(ImageLoader):
             csv_path = config.CARTOONS_VALIDATION_CSV
         elif mode == "test":
             csv_path = config.CARTOONS_TEST_CSV
-        ImageLoader.__init__(self, csv_path, filter_data, transform, nb_images)
+        ImageLoader.__init__(
+            self, csv_path, filter_data, transform, nb_images, smooth, gray
+        )
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    def show_image(image: NDArray) -> None:
+        """Show image"""
+        # plot image with matplotlib
+        plt.imshow(image)
+        plt.show()
+
+    # Test the dataset loader
+    dataset = CartoonDataset(
+        lambda df: df,
+        lambda image: image,
+        nb_images=10,
+        mode="train",
+        smooth=True,
+        gray=True,
+    )
+    # print(dataset.df_images)
+    # print(len(dataset))
+    # show_image(dataset[0][0])
+    # show_image(dataset[0][1])
+    # show_image(dataset[0][2])
