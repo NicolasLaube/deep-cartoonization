@@ -1,10 +1,15 @@
+"""Parameters for the model."""
+# pylint: disable=R0902, C0103
 from __future__ import annotations
-from dataclasses import dataclass
+
 import enum
+from dataclasses import dataclass
 from typing import Optional
 
 
 class Architecture(enum.Enum):
+    """Enum for the architecture"""
+
     GANStyle = "Style Gan"
     GANUNet = "UNet GAN"
     GANFixed = "Fixed GAN"
@@ -18,25 +23,31 @@ class Architecture(enum.Enum):
 
 @dataclass
 class ArchitectureParams:
-    pass
+    """Parameters for the architecture"""
 
 
 @dataclass
 class ArchitectureParamsNULL(ArchitectureParams):
-    pass
+    """Null architecture params"""
 
 
 @dataclass
 class ArchitectureParamsModular(ArchitectureParams):
+    """Architecture params for the modular GAN"""
+
     nb_resnet_blocks: Optional[int] = 8
-    nb_channels_picture: Optional[int] = 3
-    nb_channels_cartoon: Optional[int] = 3
+    nb_channels_gen_input: Optional[int] = 3
+    nb_channels_gen_output: Optional[int] = 3
     nb_channels_1st_hidden_layer_gen: Optional[int] = 64
     nb_channels_1st_hidden_layer_disc: Optional[int] = 32
+    nb_channels_disc_input: Optional[int] = 3
+    nb_channels_disc_output: Optional[int] = 1
 
 
 @dataclass
 class TrainerParams:
+    """Parameters for training"""
+
     gen_lr: float = 1e-4
     disc_lr: float = 1e-4
     batch_size: int = 16
@@ -49,6 +60,8 @@ class TrainerParams:
 
 @dataclass
 class CartoonGanLossParameters:
+    """Parameters for the CartoonGAN loss"""
+
     discriminator_loss: float
     generator_loss: float
     conditional_loss: float
