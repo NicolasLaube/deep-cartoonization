@@ -75,15 +75,19 @@ class Trainer(ABC):
     def load_model(self, gen_path: str, disc_path: str) -> None:
         """Load the model from weights"""
         if torch.cuda.is_available():
-            self.discriminator.load_state_dict(torch.load(disc_path))
-            self.generator.load_state_dict(torch.load(gen_path))
+            if disc_path is not None:
+                self.discriminator.load_state_dict(torch.load(disc_path))
+            if gen_path is not None:
+                self.generator.load_state_dict(torch.load(gen_path))
         else:
-            self.discriminator.load_state_dict(
-                torch.load(disc_path, map_location=lambda storage, loc: storage)
-            )
-            self.generator.load_state_dict(
-                torch.load(gen_path, map_location=lambda storage, loc: storage)
-            )
+            if disc_path is not None:
+                self.discriminator.load_state_dict(
+                    torch.load(disc_path, map_location=lambda storage, loc: storage)
+                )
+            if gen_path is not None:
+                self.generator.load_state_dict(
+                    torch.load(gen_path, map_location=lambda storage, loc: storage)
+                )
 
     @abstractmethod
     def load_generator(self) -> nn.Module:

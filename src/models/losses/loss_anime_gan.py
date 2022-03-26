@@ -1,5 +1,5 @@
 """Loss anime gan"""
-# pylint: disable=R0902, R0913
+# pylint: disable=R0902, R0913, E1102
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -23,16 +23,11 @@ class AnimeGanLoss:
         device: str = "cpu",
     ):
         self.device = device
-        if self.device == "cuda":
-            self.vgg19 = Vgg19().cuda().eval()
-            self.content_loss = nn.L1Loss().cuda()
-            self.color_loss = ColorLoss().cuda()
-            self.gram_loss = nn.L1Loss().cuda()
-        else:
-            self.vgg19 = Vgg19().eval()
-            self.content_loss = nn.L1Loss()
-            self.color_loss = ColorLoss()
-            self.gram_loss = nn.L1Loss()
+
+        self.vgg19 = Vgg19().to(self.device).eval()
+        self.content_loss = nn.L1Loss().to(self.device)
+        self.color_loss = ColorLoss(self.device).to(self.device)
+        self.gram_loss = nn.L1Loss().to(self.device)
 
         self.wadvg = wadvg
         self.wadvd = wadvd
@@ -40,7 +35,7 @@ class AnimeGanLoss:
         self.wgra = wgra
         self.wcol = wcol
         self.adv_type = gan_loss
-        self.bce_loss = nn.BCELoss()
+        self.bce_loss = nn.BCELoss().to(self.device)
 
     def compute_loss_generator(self, fake_img, img, fake_logit, anime_gray):
         """
@@ -60,8 +55,11 @@ class AnimeGanLoss:
         return [
             self.wadvg * self.adv_loss_g(fake_logit),
             self.wcon * self.content_loss(img_feat, fake_feat),
-            self.wgra * self.gram_loss(gram(anime_feat), gram(fake_feat)),
-            self.wcol * self.color_loss(img, fake_img),
+            self.wgra
+            * self.gram_loss(
+                gram(anime_feat).to(self.device), gram(fake_feat).to(self.device)
+            ),
+            self.wcol * self.color_loss(img, fake_img).to(self.device),
         ]
 
     def compute_loss_discriminator(

@@ -588,7 +588,10 @@ if __name__ == "__main__":
             ratio_filter_mode=preprocessing.RatioFilterMode.NO_FILTER,
             nb_images=4,
         ),
-        init_models_paths=None,
+        init_models_paths=ModelPathsParameters(
+            gen_path=os.path.join("weights", "paper", "generator_hayao.pth"),
+            disc_path=None,
+        ),
         training_parameters=models.TrainerParams(batch_size=2),
         pretraining_parameters=models.TrainerParams(batch_size=2),
     )
