@@ -4,8 +4,8 @@ from src.pipelines.pipeline import Pipeline
 
 if __name__ == "__main__":
     pipeline = Pipeline(
-        architecture=models.Architecture.GANModular,
-        architecture_params=models.ArchitectureParamsModular(),
+        architecture=models.Architecture.GANAnime,
+        architecture_params=models.ArchitectureParamsNULL(),
         cartoons_dataset_parameters=dataset.CartoonsDatasetParameters(
             new_size=(256, 256),
             crop_mode=preprocessing.CropMode.CROP_CENTER,
@@ -22,4 +22,4 @@ if __name__ == "__main__":
         pretraining_parameters=models.PretrainingParams(batch_size=2),
     )
 
-    pipeline.train(2)
+    pipeline.pretrain(2)
