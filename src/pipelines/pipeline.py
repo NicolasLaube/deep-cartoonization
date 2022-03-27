@@ -567,4 +567,4 @@ if __name__ == "__main__":
         pretraining_parameters=models.PretrainingParams(batch_size=2),
     )
 
-    pipeline.get_cartoonized_images(4)
+    pipeline.train(2)

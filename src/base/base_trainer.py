@@ -35,6 +35,12 @@ class Trainer(ABC):
         self.gen_scheduler: optim.lr_scheduler.MultiStepLR = None  # type: ignore
         self.disc_scheduler: optim.lr_scheduler.MultiStepLR = None  # type: ignore
 
+        # Initialize autocast
+        if device == "cpu":
+            self.autocast = torch.autocast
+        else:
+            self.autocast = torch.cuda.amp.autocast  # type: ignore
+
     @abstractmethod
     def train(
         self,
