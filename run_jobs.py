@@ -39,7 +39,7 @@ make install
 pip install protobuf==3.9.2
 
 echo "Training"
-python3 -m src.run_train --lr {lr_param} --nb-images 100 --epochs 2
+python3 -m src.run_train --lr {lr_param}
 
 if [[ $? != 0 ]]; then
     exit -1
@@ -79,6 +79,6 @@ os.system("mkdir -p ~/logslurms")
 
 
 # Launch the batch jobs
-lr_list = [1e-5]  # , 5e-5, 1e-4, 2e-4, 5e-4, 1e-3]
+lr_list = [1e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3]
 for lr in lr_list:
     submit_job(makejob(COMMIT_ID, lr))
