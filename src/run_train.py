@@ -38,7 +38,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--nb_images", type=int, help="Nb of images to train on", default=-1
+        "--nb-images", type=int, help="Nb of images to train on", default=-1
     )
 
     parser.add_argument(
