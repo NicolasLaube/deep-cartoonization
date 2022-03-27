@@ -12,8 +12,8 @@ def makejob(commit_id_param, lr_param):
 #SBATCH --nodes=1
 #SBATCH --partition=gpu_prod_night
 #SBATCH --time=10:00:00
-#SBATCH --output=~/logslurms/slurm-%A_%a.out
-#SBATCH --error=~/logslurms/slurm-%A_%a.err
+#SBATCH --output=../logslurms/slurm-%A_%a.out
+#SBATCH --error=../logslurms/slurm-%A_%a.err
 #SBATCH --array=0-0
 
 current_dir=`pwd`
