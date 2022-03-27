@@ -1,7 +1,6 @@
 """Cartoonizer pipeline launcher"""
 # pylint: disable=R0902,E1102
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 from nptyping import NDArray
@@ -12,14 +11,6 @@ from src import config, dataset, models, preprocessing
 from src.base.base_trainer import Trainer
 from src.pipelines.utils import init_device
 from src.preprocessing.transformations.transformations import Transform
-
-
-@dataclass
-class ModelPathsParameters:
-    """Model's parameters"""
-
-    gen_path: Optional[str]
-    disc_path: Optional[str]
 
 
 class Cartoonizer:
