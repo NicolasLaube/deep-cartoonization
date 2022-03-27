@@ -73,6 +73,13 @@ class TrainingParams(BaseTrainingParams):
 
 
 @dataclass
+class InferingParams:
+    """Infering parameters"""
+
+    batch_size: int = 16
+
+
+@dataclass
 class CartoonGanLossParameters:
     """Cartoon GAN loss parameters"""
 

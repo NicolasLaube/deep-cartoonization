@@ -28,8 +28,7 @@ class Cartoonizer:
     def __init__(
         self,
         *,
-        batch_size: int = 4,
-        input_size: int = 256,
+        infering_parameters: models.InferingParams,
         architecture: models.Architecture = models.Architecture.GANFixed,
         architecture_params: models.ArchitectureParams = models.ArchitectureParamsNULL(),
         pictures_dataset_parameters: dataset.PicturesDatasetParameters,
@@ -37,8 +36,7 @@ class Cartoonizer:
     ):
         # Initialize parameters
         self.device = init_device()
-        self.batch_size = batch_size
-        self.input_size = input_size
+        self.infering_params = infering_parameters
         self.architecture = architecture
         self.architecture_params = architecture_params
         self.pictures_dataset_parameters = pictures_dataset_parameters
@@ -76,7 +74,7 @@ class Cartoonizer:
 
         test_pictures_loader = DataLoader(
             dataset=pictures_dataset,
-            batch_size=self.batch_size,
+            batch_size=self.infering_params.batch_size,
             shuffle=True,
             drop_last=False,
             num_workers=config.NUM_WORKERS,
@@ -164,3 +162,19 @@ class Cartoonizer:
             ), "Anime architecture requires null architecture parameters"
             return models.TrainerAnimeGAN(self.architecture_params, device=self.device)
         raise NotImplementedError("Pipeline wasn't implemented")
+
+
+if __name__ == "__main__":
+    cartoonizer = Cartoonizer(
+        infering_parameters=models.InferingParams(batch_size=2),
+        architecture=models.Architecture.GANFixed,
+        architecture_params=models.ArchitectureParamsNULL(),
+        pictures_dataset_parameters=dataset.PicturesDatasetParameters(
+            new_size=(256, 256),
+            crop_mode=preprocessing.CropMode.CROP_CENTER,
+            ratio_filter_mode=preprocessing.RatioFilterMode.NO_FILTER,
+            nb_images=4,
+        ),
+        gen_path="weights/pretrained/trained_netG.pth",
+    )
+    cartoonizer.get_cartoonized_images(4)
