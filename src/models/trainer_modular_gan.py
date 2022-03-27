@@ -15,7 +15,11 @@ from src.base.base_trainer import Trainer
 from src.models.discriminators.discriminator_modular import ModularDiscriminator
 from src.models.generators.generator_modular import ModularGenerator
 from src.models.losses.loss_content import ContentLoss
-from src.models.utils.parameters import ArchitectureParamsModular, TrainerParams
+from src.models.utils.parameters import (
+    ArchitectureParamsModular,
+    PretrainingParams,
+    TrainingParams,
+)
 
 
 class ModularGANTrainer(Trainer):
@@ -48,7 +52,7 @@ class ModularGANTrainer(Trainer):
         *,
         pictures_loader_train: DataLoader,
         pictures_loader_validation: DataLoader,
-        pretrain_params: TrainerParams,
+        pretrain_params: PretrainingParams,
         batch_callback: Optional[Callable] = None,
         validation_callback: Optional[Callable] = None,
         epoch_start: int = 0,
@@ -130,7 +134,7 @@ class ModularGANTrainer(Trainer):
         pictures_loader_validation: DataLoader,
         cartoons_loader_train: DataLoader,
         cartoons_loader_validation: DataLoader,
-        train_params: TrainerParams,
+        train_params: TrainingParams,
         batch_callback: Optional[Callable] = None,
         validation_callback: Optional[Callable[[], Any]] = None,
         epoch_start: int = 0,

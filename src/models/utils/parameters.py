@@ -46,8 +46,8 @@ class ArchitectureParamsModular(ArchitectureParams):
 
 
 @dataclass
-class TrainerParams:
-    """Trainer parameters"""
+class BaseTrainingParams:
+    """Base Training parameters"""
 
     gen_lr: float = 1e-4
     disc_lr: float = 1e-4
@@ -57,6 +57,19 @@ class TrainerParams:
     disc_beta1: float = 0.5
     disc_beta2: float = 0.999
     input_size: int = 256
+
+
+@dataclass
+class PretrainingParams(BaseTrainingParams):
+    """Pretraining params"""
+
+
+@dataclass
+class TrainingParams(BaseTrainingParams):
+    """Training parameters"""
+
+    weight_generator_bce_loss: float = 1
+    weight_generator_content_loss: float = 1
 
 
 @dataclass

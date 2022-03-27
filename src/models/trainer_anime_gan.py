@@ -17,7 +17,11 @@ from src.base.base_trainer import Trainer
 from src.models.discriminators.discriminator_anime import Discriminator
 from src.models.generators.generator_anim import Generator
 from src.models.losses.loss_anime_gan import AnimeGanLoss
-from src.models.utils.parameters import ArchitectureParams, TrainerParams
+from src.models.utils.parameters import (
+    ArchitectureParams,
+    PretrainingParams,
+    TrainingParams,
+)
 
 
 class TrainerAnimeGAN(Trainer):
@@ -44,7 +48,7 @@ class TrainerAnimeGAN(Trainer):
         *,
         pictures_loader_train: DataLoader,
         pictures_loader_validation: DataLoader,
-        pretrain_params: TrainerParams,
+        pretrain_params: PretrainingParams,
         batch_callback: Optional[Callable] = None,
         validation_callback: Optional[Callable] = None,
         epoch_start: int = 0,
@@ -61,7 +65,7 @@ class TrainerAnimeGAN(Trainer):
         pictures_loader_validation: DataLoader,
         cartoons_loader_train: DataLoader,
         cartoons_loader_validation: DataLoader,
-        train_params: TrainerParams,
+        train_params: TrainingParams,
         batch_callback: Optional[Callable[[], Any]] = None,
         validation_callback: Optional[Callable[[], Any]] = None,
         epoch_start: int = 1,

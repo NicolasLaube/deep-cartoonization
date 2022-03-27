@@ -21,7 +21,11 @@ from torch.utils.tensorboard import SummaryWriter
 
 from src import config, dataset, models, preprocessing
 from src.base.base_trainer import Trainer
-from src.models.utils.parameters import ArchitectureParams, TrainerParams
+from src.models.utils.parameters import (
+    ArchitectureParams,
+    PretrainingParams,
+    TrainingParams,
+)
 from src.pipelines.utils import init_device
 from src.preprocessing.transformations.transformations import Transform
 
@@ -44,9 +48,10 @@ class Pipeline:
         architecture_params: models.ArchitectureParams = models.ArchitectureParamsNULL(),
         cartoons_dataset_parameters: dataset.CartoonsDatasetParameters,
         pictures_dataset_parameters: dataset.PicturesDatasetParameters,
-        training_parameters: models.TrainerParams,
-        pretraining_parameters: Optional[models.TrainerParams] = None,
+        training_parameters: models.TrainingParams,
+        pretraining_parameters: models.PretrainingParams,
         init_models_paths: Optional[ModelPathsParameters] = None,
+        save_results: bool = True,
     ):
         # Initialize parameters
         self.device = init_device()
@@ -55,16 +60,14 @@ class Pipeline:
         self.cartoons_dataset_parameters = cartoons_dataset_parameters
         self.pictures_dataset_parameters = pictures_dataset_parameters
         self.training_params = training_parameters
+        self.pretraining_params = pretraining_parameters
+        self.save_results = save_results
         self.logs_path: str = None  # type: ignore
         self.losses_path: str = None  # type: ignore
         self.params: Dict[str, Any] = None  # type: ignore
+        self.folder_path: str = None  # type: ignore
+        self.weights_path: str = None  # type: ignore
         self.trainer = self.__init_trainer()
-
-        self.pretraining_params = (
-            pretraining_parameters
-            if pretraining_parameters is not None
-            else training_parameters
-        )
 
         self.init_models_paths = (
             init_models_paths
@@ -74,8 +77,8 @@ class Pipeline:
 
         # Initialize logs
         self.__init_logs()
-        self.folder_path = os.path.join(config.LOGS_FOLDER, self.params["run_id"])
-        self.weights_path = os.path.join(config.WEIGHTS_FOLDER, self.params["run_id"])
+        # self.folder_path = os.path.join(config.LOGS_FOLDER, self.params["run_id"])
+        # self.weights_path = os.path.join(config.WEIGHTS_FOLDER, self.params["run_id"])
 
     def pretrain(self, nb_epochs: int) -> None:
         """To pretrain the model"""
@@ -431,14 +434,23 @@ class Pipeline:
         # Save new global params
         self.__save_params()
         # Create folder for this run
-        self.folder_path = os.path.join(config.LOGS_FOLDER, self.params["run_id"])
-        self.weights_path = os.path.join(config.WEIGHTS_FOLDER, self.params["run_id"])
+        self.folder_path = (
+            os.path.join(config.LOGS_FOLDER, self.params["run_id"])
+            if self.save_results
+            else os.path.join(config.LOGS_FOLDER, "other")
+        )
+        self.weights_path = (
+            os.path.join(config.WEIGHTS_FOLDER, self.params["run_id"])
+            if self.save_results
+            else config.WEIGHTS_FOLDER
+        )
         self.logs_path = os.path.join(self.folder_path, "logs")
         self.losses_path = os.path.join(self.folder_path, "losses")
-        os.mkdir(self.folder_path)
-        os.mkdir(self.weights_path)
-        os.mkdir(self.logs_path)
-        os.mkdir(self.losses_path)
+        if self.save_results:
+            os.mkdir(self.folder_path)
+            os.mkdir(self.weights_path)
+            os.mkdir(self.logs_path)
+            os.mkdir(self.losses_path)
 
     #######################################
     ### About (pre)training and testing ###
@@ -513,7 +525,7 @@ class Pipeline:
                 csv_writer = csv.writer(file)
                 csv_writer.writerow([Pipeline.__get_time_id(), str_losses])
 
-        return callback
+        return callback if self.save_results else None
 
     def __get_validation_callback(self, pretrain: bool = False):
         """Return validation callback for pretrain/train"""
@@ -537,7 +549,7 @@ class Pipeline:
             self.__save_params()
             logging.info("Results for epoch %s saved.", epoch)
 
-        return callback
+        return callback if self.save_results else None
 
     #############
     ### Other ###
@@ -545,14 +557,15 @@ class Pipeline:
 
     def __save_params(self):
         """To save the parameters in the csv file"""
-        df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
-        df_extract = df_all_params[df_all_params["run_id"] == self.params["run_id"]]
-        if len(df_extract) > 0:
-            df_all_params.loc[df_extract.index[0], :] = self.params[:]
-        # df_all_params is considered to be a File reader, so we must ensure it is a dataframe
-        elif isinstance(df_all_params, pd.DataFrame):
-            df_all_params = df_all_params.append(self.params, ignore_index=True)
-        df_all_params.to_csv(config.ALL_PARAMS_CSV)
+        if self.save_results:
+            df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
+            df_extract = df_all_params[df_all_params["run_id"] == self.params["run_id"]]
+            if len(df_extract) > 0:
+                df_all_params.loc[df_extract.index[0], :] = self.params[:]
+            # df_all_params is considered to be a File reader, so we must ensure it is a dataframe
+            elif isinstance(df_all_params, pd.DataFrame):
+                df_all_params = df_all_params.append(self.params, ignore_index=True)
+            df_all_params.to_csv(config.ALL_PARAMS_CSV)
 
     @staticmethod
     def __get_time_id() -> str:
@@ -563,7 +576,8 @@ class Pipeline:
     def __format_dataclass(
         data_class: Union[
             ArchitectureParams,
-            TrainerParams,
+            TrainingParams,
+            PretrainingParams,
             ModelPathsParameters,
             dataset.ImageDatasetParameters,
         ],

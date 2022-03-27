@@ -18,8 +18,8 @@ if __name__ == "__main__":
             nb_images=4,
         ),
         init_models_paths=None,
-        training_parameters=models.TrainerParams(batch_size=2),
-        pretraining_parameters=models.TrainerParams(batch_size=2),
+        training_parameters=models.TrainingParams(batch_size=2),
+        pretraining_parameters=models.PretrainingParams(batch_size=2),
     )
 
     pipeline.train(2)

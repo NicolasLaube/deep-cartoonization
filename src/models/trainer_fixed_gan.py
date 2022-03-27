@@ -14,7 +14,7 @@ from src.base.base_trainer import Trainer
 from src.models.discriminators.discriminator_fixed import FixedDiscriminator
 from src.models.generators.generator_fixed import FixedGenerator
 from src.models.losses import AdversarialLoss, ContentLoss
-from src.models.utils.parameters import TrainerParams
+from src.models.utils.parameters import PretrainingParams, TrainingParams
 
 
 class FixedCartoonGANTrainer(Trainer):
@@ -40,7 +40,7 @@ class FixedCartoonGANTrainer(Trainer):
         *,
         pictures_loader_train: DataLoader,
         pictures_loader_validation: DataLoader,
-        pretrain_params: TrainerParams,
+        pretrain_params: PretrainingParams,
         batch_callback: Optional[Callable] = None,
         validation_callback: Optional[Callable] = None,
         epoch_start: int = 1,
@@ -130,7 +130,7 @@ class FixedCartoonGANTrainer(Trainer):
         pictures_loader_validation: DataLoader,
         cartoons_loader_train: DataLoader,
         cartoons_loader_validation: DataLoader,
-        train_params: TrainerParams,
+        train_params: TrainingParams,
         batch_callback: Optional[Callable[[], Any]] = None,
         validation_callback: Optional[Callable[[], Any]] = None,
         epoch_start: int = 1,
@@ -210,11 +210,14 @@ class FixedCartoonGANTrainer(Trainer):
                     param.requires_grad = False
 
                 with torch.autocast(self.device):
-                    disc_fake = self.discriminator(pictures)
+                    disc_fake = self.discriminator(gen_cartoons)
 
-                    gen_bce_loss = bce_loss(disc_fake, fake)
+                    gen_bce_loss = bce_loss(disc_fake, real)
                     gen_content_loss = content_loss(gen_cartoons, pictures)
-                    gen_loss = gen_bce_loss + gen_content_loss
+                    gen_loss = (
+                        train_params.weight_generator_bce_loss * gen_bce_loss
+                        + train_params.weight_generator_content_loss * gen_content_loss
+                    )
 
                 scaler.scale(gen_loss).backward()
                 scaler.step(self.gen_optimizer)
