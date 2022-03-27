@@ -37,6 +37,10 @@ class Transform:
             return Normalizer(
                 mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), device=self.device
             )
+        if self.architecture == Architecture.GANAnime:
+            return Normalizer(
+                mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5), device=self.device
+            )
 
         raise NotImplementedError("Normalizer wasn't implemented for this architecture")
 
