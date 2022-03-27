@@ -223,7 +223,10 @@ class ModularGANTrainer(Trainer):
 
                 reconstruction_loss = content_loss(gen_cartoons, pictures)
 
-                gen_loss = disc_fake_loss + reconstruction_loss
+                gen_loss = (
+                    train_params.weight_generator_bce_loss * disc_fake_loss
+                    + train_params.weight_generator_content_loss * reconstruction_loss
+                )
 
                 gen_loss.backward()
                 self.gen_optimizer.step()

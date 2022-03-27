@@ -15,7 +15,6 @@ import numpy as np
 import pandas as pd
 from nptyping import NDArray
 from numpy import logical_and
-from PIL import Image
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
@@ -26,8 +25,8 @@ from src.models.utils.parameters import (
     PretrainingParams,
     TrainingParams,
 )
+from src.pipelines.cartoonizer import Cartoonizer
 from src.pipelines.utils import init_device
-from src.preprocessing.transformations.transformations import Transform
 
 
 @dataclass
@@ -51,7 +50,6 @@ class Pipeline:
         training_parameters: models.TrainingParams,
         pretraining_parameters: models.PretrainingParams,
         init_models_paths: Optional[ModelPathsParameters] = None,
-        save_results: bool = True,
     ):
         # Initialize parameters
         self.device = init_device()
@@ -61,13 +59,13 @@ class Pipeline:
         self.pictures_dataset_parameters = pictures_dataset_parameters
         self.training_params = training_parameters
         self.pretraining_params = pretraining_parameters
-        self.save_results = save_results
         self.logs_path: str = None  # type: ignore
         self.losses_path: str = None  # type: ignore
         self.params: Dict[str, Any] = None  # type: ignore
         self.folder_path: str = None  # type: ignore
         self.weights_path: str = None  # type: ignore
         self.trainer = self.__init_trainer()
+        self.cartoonizer = self.__init_cartoonizer()
 
         self.init_models_paths = (
             init_models_paths
@@ -77,8 +75,6 @@ class Pipeline:
 
         # Initialize logs
         self.__init_logs()
-        # self.folder_path = os.path.join(config.LOGS_FOLDER, self.params["run_id"])
-        # self.weights_path = os.path.join(config.WEIGHTS_FOLDER, self.params["run_id"])
 
     def pretrain(self, nb_epochs: int) -> None:
         """To pretrain the model"""
@@ -198,73 +194,33 @@ class Pipeline:
     ) -> List[Dict[str, NDArray[(3, Any, Any), np.int32]]]:
         """To show some cartoonized images"""
 
-        transformer = Transform(
-            architecture=self.architecture,
-            new_size=self.cartoons_dataset_parameters.new_size,
-            crop_mode=self.cartoons_dataset_parameters.crop_mode,
-            device=self.device,
-        )
-
-        predictor = models.Predictor(
-            architecture=self.architecture,
-            architecture_params=self.architecture_params,
-            transformer=transformer,
-            device=self.device,
-        )
-
         models_to_load_paths = self.__get_model_to_load()
-
         if models_to_load_paths is not None:
-            predictor.load_weights(gen_path=models_to_load_paths["gen_path"])
+            self.cartoonizer.set_weights(models_to_load_paths["gen_path"])
 
-        pictures_dataset = self.__init_pictures_dataset(train=False)
-
-        test_pictures_loader = DataLoader(
-            dataset=pictures_dataset,
-            batch_size=self.training_params.batch_size,
-            shuffle=True,
-            drop_last=False,
-            num_workers=config.NUM_WORKERS,
-        )
-
-        return predictor.cartoonize_dataset(
-            pictures_loader=test_pictures_loader, nb_images=nb_images
-        )
+        return self.cartoonizer.get_cartoonized_images(nb_images)
 
     def cartoonize_images(
         self, pictures: List[NDArray[(3, Any, Any), np.int32]]
     ) -> List[Dict[str, NDArray[(3, Any, Any), np.int32]]]:
         """To show some cartoonized images"""
 
-        transformer = Transform(
-            architecture=self.architecture,
-            new_size=self.cartoons_dataset_parameters.new_size,
-            crop_mode=self.cartoons_dataset_parameters.crop_mode,
-            device=self.device,
-        )
-
-        predictor = models.Predictor(
-            architecture=self.architecture,
-            architecture_params=self.architecture_params,
-            transformer=transformer,
-            device=self.device,
-        )
-
         models_to_load_paths = self.__get_model_to_load()
-
         if models_to_load_paths is not None:
-            predictor.load_weights(gen_path=models_to_load_paths["gen_path"])
+            self.cartoonizer.set_weights(models_to_load_paths["gen_path"])
 
-        return predictor.cartoonize(pictures=pictures)
+        return self.cartoonizer.cartoonize_images(pictures)
 
     def cartoonize_images_from_path(
         self, paths: List[str]
     ) -> List[Dict[str, NDArray[(3, Any, Any), np.int32]]]:
         """To show some cartoonized images from their path"""
 
-        pictures = [Image.open(path) for path in paths]
+        models_to_load_paths = self.__get_model_to_load()
+        if models_to_load_paths is not None:
+            self.cartoonizer.set_weights(models_to_load_paths["gen_path"])
 
-        return self.cartoonize_images(pictures)
+        return self.cartoonizer.cartoonize_images_from_path(paths)
 
     ###########################
     ### About initilization ###
@@ -333,6 +289,16 @@ class Pipeline:
             ), "Anime architecture requires null architecture parameters"
             return models.TrainerAnimeGAN(self.architecture_params, device=self.device)
         raise NotImplementedError("Pipeline wasn't implemented")
+
+    def __init_cartoonizer(self) -> Cartoonizer:
+        """Initialize cartoonizer"""
+        return Cartoonizer(
+            batch_size=self.training_params.batch_size,
+            input_size=self.training_params.input_size,
+            architecture=self.architecture,
+            architecture_params=self.architecture_params,
+            pictures_dataset_parameters=self.pictures_dataset_parameters,
+        )
 
     def __init_logs(self) -> None:
         """To init the logs folder or to load the training model"""
@@ -434,23 +400,14 @@ class Pipeline:
         # Save new global params
         self.__save_params()
         # Create folder for this run
-        self.folder_path = (
-            os.path.join(config.LOGS_FOLDER, self.params["run_id"])
-            if self.save_results
-            else os.path.join(config.LOGS_FOLDER, "other")
-        )
-        self.weights_path = (
-            os.path.join(config.WEIGHTS_FOLDER, self.params["run_id"])
-            if self.save_results
-            else config.WEIGHTS_FOLDER
-        )
+        self.folder_path = os.path.join(config.LOGS_FOLDER, self.params["run_id"])
+        self.weights_path = os.path.join(config.WEIGHTS_FOLDER, self.params["run_id"])
         self.logs_path = os.path.join(self.folder_path, "logs")
         self.losses_path = os.path.join(self.folder_path, "losses")
-        if self.save_results:
-            os.mkdir(self.folder_path)
-            os.mkdir(self.weights_path)
-            os.mkdir(self.logs_path)
-            os.mkdir(self.losses_path)
+        os.mkdir(self.folder_path)
+        os.mkdir(self.weights_path)
+        os.mkdir(self.logs_path)
+        os.mkdir(self.losses_path)
 
     #######################################
     ### About (pre)training and testing ###
@@ -525,7 +482,7 @@ class Pipeline:
                 csv_writer = csv.writer(file)
                 csv_writer.writerow([Pipeline.__get_time_id(), str_losses])
 
-        return callback if self.save_results else None
+        return callback
 
     def __get_validation_callback(self, pretrain: bool = False):
         """Return validation callback for pretrain/train"""
@@ -549,7 +506,7 @@ class Pipeline:
             self.__save_params()
             logging.info("Results for epoch %s saved.", epoch)
 
-        return callback if self.save_results else None
+        return callback
 
     #############
     ### Other ###
@@ -557,15 +514,14 @@ class Pipeline:
 
     def __save_params(self):
         """To save the parameters in the csv file"""
-        if self.save_results:
-            df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
-            df_extract = df_all_params[df_all_params["run_id"] == self.params["run_id"]]
-            if len(df_extract) > 0:
-                df_all_params.loc[df_extract.index[0], :] = self.params[:]
-            # df_all_params is considered to be a File reader, so we must ensure it is a dataframe
-            elif isinstance(df_all_params, pd.DataFrame):
-                df_all_params = df_all_params.append(self.params, ignore_index=True)
-            df_all_params.to_csv(config.ALL_PARAMS_CSV)
+        df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
+        df_extract = df_all_params[df_all_params["run_id"] == self.params["run_id"]]
+        if len(df_extract) > 0:
+            df_all_params.loc[df_extract.index[0], :] = self.params[:]
+        # df_all_params is considered to be a File reader, so we must ensure it is a dataframe
+        elif isinstance(df_all_params, pd.DataFrame):
+            df_all_params = df_all_params.append(self.params, ignore_index=True)
+        df_all_params.to_csv(config.ALL_PARAMS_CSV)
 
     @staticmethod
     def __get_time_id() -> str:
