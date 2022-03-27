@@ -321,8 +321,8 @@ class Pipeline:
             assert isinstance(
                 self.architecture_params, models.ArchitectureParamsModular
             ), "Modular architecture requires modular params"
-            return models.FixedCartoonGANTrainer(
-                self.architecture_params, device=self.device
+            return models.ModularGANTrainer(
+                device=self.device, architecture_params=self.architecture_params
             )
         if self.architecture == models.Architecture.GANAnime:
             assert isinstance(
@@ -571,29 +571,3 @@ class Pipeline:
     ) -> Dict[str, Any]:
         """To add a prefix on all the fields of a dictionary"""
         return {f"{prefix}_{k}": v for (k, v) in asdict(data_class).items()}
-
-
-if __name__ == "__main__":
-    pipeline = Pipeline(
-        architecture=models.Architecture.GANAnime,
-        architecture_params=models.ArchitectureParamsNULL(),
-        cartoons_dataset_parameters=dataset.CartoonsDatasetParameters(
-            new_size=(256, 256),
-            crop_mode=preprocessing.CropMode.CROP_CENTER,
-            nb_images=4,
-        ),
-        pictures_dataset_parameters=dataset.PicturesDatasetParameters(
-            new_size=(256, 256),
-            crop_mode=preprocessing.CropMode.CROP_CENTER,
-            ratio_filter_mode=preprocessing.RatioFilterMode.NO_FILTER,
-            nb_images=4,
-        ),
-        init_models_paths=ModelPathsParameters(
-            gen_path=os.path.join("weights", "paper", "generator_hayao.pth"),
-            disc_path=None,
-        ),
-        training_parameters=models.TrainerParams(batch_size=2),
-        pretraining_parameters=models.TrainerParams(batch_size=2),
-    )
-
-    pipeline.train(2)

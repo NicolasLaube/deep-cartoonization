@@ -37,10 +37,12 @@ class ArchitectureParamsModular(ArchitectureParams):
     """Architecture params for Modular GAN"""
 
     nb_resnet_blocks: Optional[int] = 8
-    nb_channels_picture: Optional[int] = 3
-    nb_channels_cartoon: Optional[int] = 3
+    nb_channels_gen_input: Optional[int] = 3
+    nb_channels_gen_output: Optional[int] = 3
     nb_channels_1st_hidden_layer_gen: Optional[int] = 64
     nb_channels_1st_hidden_layer_disc: Optional[int] = 32
+    nb_channels_disc_input: Optional[int] = 3
+    nb_channels_disc_output: Optional[int] = 1
 
 
 @dataclass
