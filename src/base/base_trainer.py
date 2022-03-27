@@ -37,7 +37,7 @@ class Trainer(ABC):
 
         # Initialize autocast
         if device == "cpu":
-            self.autocast = torch.autocast
+            self.autocast = lambda: torch.autocast("cpu")
         else:
             self.autocast = torch.cuda.amp.autocast  # type: ignore
 
