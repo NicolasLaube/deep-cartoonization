@@ -104,7 +104,7 @@ class ModularGANTrainer(Trainer):
 
                     self.generator.zero_grad()
 
-                    with self.autocast(self.device):
+                    with self.autocast():
 
                         gen_cartoons = self.generator(pictures)
                         reconstruction_loss = content_loss(
@@ -272,7 +272,7 @@ class ModularGANTrainer(Trainer):
                     # Discriminator validation #
                     ############################
 
-                    with self.autocast(self.device):
+                    with self.autocast():
                         disc_real_cartoons = self.discriminator(cartoons)
                         disc_real_cartoon_loss = bce_loss(disc_real_cartoons, real)
 
@@ -288,7 +288,7 @@ class ModularGANTrainer(Trainer):
                     # Generator validation #
                     ########################
 
-                    with self.autocast(self.device):
+                    with self.autocast():
                         generated_image = self.generator(cartoons)
                         disc_fake = self.discriminator(generated_image)
                         disc_fake_loss = bce_loss(disc_fake, real)
