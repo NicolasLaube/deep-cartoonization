@@ -31,8 +31,12 @@ def resize_crop_center(
     """
     Resize an image after cropping it, keeping its center part
     """
-    min_side = min(image.size)
+    if isinstance(image, np.ndarray):
+        min_side = min(image.shape)
+    else:
+        min_side = min(image.size)
     ratio = new_size[1] / new_size[0]
+
     image = transforms.CenterCrop((min_side, int(ratio * min_side)))(image)
     return transforms.Resize(new_size)(image)
 

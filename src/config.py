@@ -50,7 +50,7 @@ WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "weights")
 
 LOGS_FOLDER = os.path.join(ROOT_FOLDER, "logs")
 ALL_PARAMS_CSV = os.path.join(LOGS_FOLDER, "all_params.csv")
-
+ALL_PARAMS_EXAMPLE_CSV = os.path.join(LOGS_FOLDER, "all_params_example.csv")
 ####################
 ### About movies ###
 ####################
