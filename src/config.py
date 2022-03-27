@@ -23,7 +23,7 @@ class Movie(Enum):
 ### About folders ###
 #####################
 
-ROOT_FOLDER = "~/cartoongan"
+ROOT_FOLDER = "/usr/users/gpupro/gpu_stutz/cartoongan"
 
 DATA_FOLDER = os.path.join(ROOT_FOLDER, "data")
 
