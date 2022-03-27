@@ -17,7 +17,7 @@ def makejob(commit_id_param, lr_param):
 
 current_dir=`pwd`
 
-echo "Session " {lr_param}_${{SLURM_ARRAY_JOB_ID}}_${{SLURM_ARRAY_TASK_ID}}
+echo "Session " {lr_param}_${{SLURM_ARRAY_JOB_ID}}
 
 echo "Copying the source directory and data"
 date
