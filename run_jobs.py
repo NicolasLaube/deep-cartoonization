@@ -34,7 +34,9 @@ echo "Setting up the virtual environment"
 python3 -m pip install virtualenv --user
 virtualenv -p python3 venv
 source venv/bin/activate
-python -m pip install -r requirements.txt
+
+echo "Installing environment"
+python3 -m pip install -r requirements.txt
 
 echo "Training"
 python3 -m src.run_train --lr {lr_param} --nb-images 100 --epochs 2
