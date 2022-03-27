@@ -9,7 +9,11 @@ from torch import nn, optim
 from torch.utils.data.dataloader import DataLoader
 
 from src import config
-from src.models.utils.parameters import TrainerParams
+from src.models.utils.parameters import (
+    BaseTrainingParams,
+    PretrainingParams,
+    TrainingParams,
+)
 
 
 class Trainer(ABC):
@@ -39,7 +43,7 @@ class Trainer(ABC):
         pictures_loader_validation: DataLoader,
         cartoons_loader_train: DataLoader,
         cartoons_loader_validation: DataLoader,
-        train_params: TrainerParams,
+        train_params: TrainingParams,
         batch_callback: Optional[Callable] = None,
         validation_callback: Optional[Callable[[], Any]] = None,
         epoch_start: int = 0,
@@ -54,7 +58,7 @@ class Trainer(ABC):
         *,
         pictures_loader_train: DataLoader,
         pictures_loader_validation: DataLoader,
-        pretrain_params: TrainerParams,
+        pretrain_params: PretrainingParams,
         batch_callback: Optional[Callable] = None,
         validation_callback: Optional[Callable] = None,
         epoch_start: int = 0,
@@ -121,7 +125,7 @@ class Trainer(ABC):
         self.generator.train()
         self.discriminator.train()
 
-    def _init_optimizers(self, params: TrainerParams, epochs: int) -> None:
+    def _init_optimizers(self, params: BaseTrainingParams, epochs: int) -> None:
         """Load optimizers"""
         self.gen_optimizer = optim.Adam(
             self.generator.parameters(),

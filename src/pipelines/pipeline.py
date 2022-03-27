@@ -20,7 +20,11 @@ from torch.utils.tensorboard import SummaryWriter
 
 from src import config, dataset, models, preprocessing
 from src.base.base_trainer import Trainer
-from src.models.utils.parameters import ArchitectureParams, TrainerParams
+from src.models.utils.parameters import (
+    ArchitectureParams,
+    PretrainingParams,
+    TrainingParams,
+)
 from src.pipelines.utils import init_device
 from src.preprocessing.transformations.transformations import Transform
 
@@ -43,8 +47,8 @@ class Pipeline:
         architecture_params: models.ArchitectureParams = models.ArchitectureParamsNULL(),
         cartoons_dataset_parameters: dataset.CartoonsDatasetParameters,
         pictures_dataset_parameters: dataset.PicturesDatasetParameters,
-        training_parameters: models.TrainerParams,
-        pretraining_parameters: Optional[models.TrainerParams] = None,
+        training_parameters: models.TrainingParams,
+        pretraining_parameters: models.PretrainingParams,
         init_models_paths: Optional[ModelPathsParameters] = None,
     ):
         # Initialize parameters
@@ -54,16 +58,11 @@ class Pipeline:
         self.cartoons_dataset_parameters = cartoons_dataset_parameters
         self.pictures_dataset_parameters = pictures_dataset_parameters
         self.training_params = training_parameters
+        self.pretraining_params = pretraining_parameters
         self.logs_path: str = None  # type: ignore
         self.losses_path: str = None  # type: ignore
         self.params: Dict[str, Any] = None  # type: ignore
         self.trainer = self.__init_trainer()
-
-        self.pretraining_params = (
-            pretraining_parameters
-            if pretraining_parameters is not None
-            else training_parameters
-        )
 
         self.init_models_paths = (
             init_models_paths
@@ -549,7 +548,8 @@ class Pipeline:
     def __format_dataclass(
         data_class: Union[
             ArchitectureParams,
-            TrainerParams,
+            TrainingParams,
+            PretrainingParams,
             ModelPathsParameters,
             dataset.ImageDatasetParameters,
         ],
@@ -575,8 +575,10 @@ if __name__ == "__main__":
             nb_images=4,
         ),
         init_models_paths=None,
-        training_parameters=models.TrainerParams(batch_size=2),
-        pretraining_parameters=models.TrainerParams(batch_size=2),
+        training_parameters=models.TrainingParams(
+            batch_size=2, weight_generator_bce_loss=10000
+        ),
+        pretraining_parameters=models.PretrainingParams(batch_size=2),
     )
 
-    pipeline.pretrain(2)
+    pipeline.train(2)
