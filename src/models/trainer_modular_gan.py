@@ -1,4 +1,4 @@
-"""Fixed GAN Trainer"""
+"""Modular GAN Trainer"""
 # pylint: disable=R0915, E1102, R0914
 import logging
 import os
@@ -19,7 +19,7 @@ from src.models.utils.parameters import ArchitectureParamsModular, TrainerParams
 
 
 class ModularGANTrainer(Trainer):
-    """Fixed Cartoon GAN"""
+    """Modular Cartoon GAN"""
 
     def __init__(
         self, device: str, architecture_params: ArchitectureParamsModular
