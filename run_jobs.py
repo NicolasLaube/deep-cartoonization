@@ -36,6 +36,7 @@ source venv/bin/activate
 
 echo "Installing environment"
 make install
+pip install protobuf==3.9.2
 
 echo "Training"
 python3 -m src.run_train --lr {lr_param} --nb-images 100 --epochs 2
