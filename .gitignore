@@ -27,3 +27,6 @@ weights/vgg/*
 !weights/vgg/.gitkeep
 logs/*
 !logs/all_params_example.csv
+!logs/other
+logs/other/logs/*
+!logs/other/logs/.gitkeep
