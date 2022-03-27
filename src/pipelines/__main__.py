@@ -4,7 +4,7 @@ from src.pipelines.pipeline import Pipeline
 
 if __name__ == "__main__":
     pipeline = Pipeline(
-        architecture=models.Architecture.GANUNet,
+        architecture=models.Architecture.GANModular,
         architecture_params=models.ArchitectureParamsModular(),
         cartoons_dataset_parameters=dataset.CartoonsDatasetParameters(
             new_size=(256, 256),

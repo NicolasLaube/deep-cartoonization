@@ -1,5 +1,5 @@
 """Parameters for the model."""
-# pylint: disable=R0902, C0103
+# pylint: disable=C0103, R0913, R0902
 from __future__ import annotations
 
 import enum
@@ -8,12 +8,13 @@ from typing import Optional
 
 
 class Architecture(enum.Enum):
-    """Enum for the architecture"""
+    """Architectures"""
 
     GANStyle = "Style Gan"
     GANUNet = "UNet GAN"
     GANFixed = "Fixed GAN"
     GANModular = "Modular GAN"
+    GANAnime = "Anime GAN"
 
 
 #############################
@@ -23,7 +24,7 @@ class Architecture(enum.Enum):
 
 @dataclass
 class ArchitectureParams:
-    """Parameters for the architecture"""
+    """Architecture params"""
 
 
 @dataclass
@@ -33,7 +34,7 @@ class ArchitectureParamsNULL(ArchitectureParams):
 
 @dataclass
 class ArchitectureParamsModular(ArchitectureParams):
-    """Architecture params for the modular GAN"""
+    """Architecture params for Modular GAN"""
 
     nb_resnet_blocks: Optional[int] = 8
     nb_channels_gen_input: Optional[int] = 3
@@ -46,7 +47,7 @@ class ArchitectureParamsModular(ArchitectureParams):
 
 @dataclass
 class TrainerParams:
-    """Parameters for training"""
+    """Trainer parameters"""
 
     gen_lr: float = 1e-4
     disc_lr: float = 1e-4
@@ -60,7 +61,7 @@ class TrainerParams:
 
 @dataclass
 class CartoonGanLossParameters:
-    """Parameters for the CartoonGAN loss"""
+    """Cartoon GAN loss parameters"""
 
     discriminator_loss: float
     generator_loss: float

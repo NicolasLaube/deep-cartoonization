@@ -4,6 +4,7 @@ import csv
 import enum
 import logging
 import os
+import shutil
 import sys
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
@@ -278,11 +279,15 @@ class Pipeline:
             new_size=self.cartoons_dataset_parameters.new_size,
             crop_mode=self.cartoons_dataset_parameters.crop_mode,
         )
+        is_anime = self.architecture == models.Architecture.GANAnime
+
         return dataset.CartoonDataset(
             data_filter.cartoon_filter,
             transform.cartoon_transform,
             self.cartoons_dataset_parameters.nb_images,
             "train" if train else "validation",
+            gray=is_anime,
+            smooth=is_anime,
         )
 
     def __init_pictures_dataset(self, train: bool) -> dataset.PicturesDataset:
@@ -319,7 +324,11 @@ class Pipeline:
             return models.ModularGANTrainer(
                 device=self.device, architecture_params=self.architecture_params
             )
-
+        if self.architecture == models.Architecture.GANAnime:
+            assert isinstance(
+                self.architecture_params, models.ArchitectureParamsNULL
+            ), "Anime architecture requires null architecture parameters"
+            return models.TrainerAnimeGAN(self.architecture_params, device=self.device)
         raise NotImplementedError("Pipeline wasn't implemented")
 
     def __init_logs(self) -> None:
@@ -339,8 +348,13 @@ class Pipeline:
             **self.__format_dataclass(self.training_params, "training"),
             **self.__format_dataclass(self.init_models_paths, "init"),
         }
+        # create csv if it doesn't exist
+        if not os.path.exists(config.ALL_PARAMS_CSV):
+            # copy all_params_example_csv to all_params_csv
+            shutil.copyfile(config.ALL_PARAMS_EXAMPLE_CSV, config.ALL_PARAMS_CSV)
 
         df_all_params = pd.read_csv(config.ALL_PARAMS_CSV, index_col=0)
+
         # Format some fields so they can be comparable with the ones from the csv file
         global_params["cartoon_dataset_selected_movies"] = sorted(
             [movie.value for movie in global_params["cartoon_dataset_selected_movies"]]

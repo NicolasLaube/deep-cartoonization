@@ -29,16 +29,18 @@ class ModularGANTrainer(Trainer):
         Trainer.__init__(self, device=device)
 
     def load_discriminator(self) -> nn.Module:
-        print("Number of ", self.architecture_params.nb_channels_1st_hidden_layer_disc)
         return ModularDiscriminator(
             in_nc=self.architecture_params.nb_channels_disc_input,
             out_nc=self.architecture_params.nb_channels_disc_output,
+            nf=self.architecture_params.nb_channels_1st_hidden_layer_disc,
         )
 
     def load_generator(self) -> nn.Module:
         return ModularGenerator(
             in_nc=self.architecture_params.nb_channels_gen_input,
             out_nc=self.architecture_params.nb_channels_gen_output,
+            nf=self.architecture_params.nb_channels_1st_hidden_layer_gen,
+            nb=self.architecture_params.nb_resnet_blocks,
         )
 
     def pretrain(
