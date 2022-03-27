@@ -1,22 +1,47 @@
 """Script for running jobs on server"""
 
 import os
+import subprocess
 
 
-def makejob(lr_param):
+def makejob(commit_id_param, lr_param):
     """Makes a new job"""
     return f"""#!/bin/bash
 
 #SBATCH --job-name=cartoongan-fixed-{lr_param}
 #SBATCH --nodes=1
 #SBATCH --partition=gpu_prod_night
-#SBATCH --time=1:00:00
+#SBATCH --time=10:00:00
 #SBATCH --output=logslurms/slurm-%A_%a.out
 #SBATCH --error=logslurms/slurm-%A_%a.err
 #SBATCH --array=0-1
 
-cd ~/cartoongan
-python3 -m src.run_train --lr {lr_param}
+current_dir=`pwd`
+
+echo "Session " {lr_param}_${{SLURM_ARRAY_JOB_ID}}_${{SLURM_ARRAY_TASK_ID}}
+
+echo "Copying the source directory and data"
+date
+mkdir $TMPDIR/cartoongan
+rsync -r . $TMPDIR/cartoongan/
+
+echo "Checking out the correct version of the code commit_id {commit_id_param}"
+cd $TMPDIR/cartoongan/
+git checkout {commit_id_param}
+
+
+echo "Setting up the virtual environment"
+python3 -m pip install virtualenv --user
+virtualenv -p python3 venv
+source venv/bin/activate
+python -m pip install -r requirements.txt
+
+echo "Training"
+python3 -m src.run_train --lr {lr_param} --nb-images 100 --epochs 2
+
+if [[ $? != 0 ]]; then
+    exit -1
+fi
 """
 
 
@@ -27,11 +52,31 @@ def submit_job(job):
     os.system("sbatch job.sbatch")
 
 
+# Ensure all the modified files have been staged and commited
+result = int(
+    # pylint: disable=W1510
+    subprocess.run(
+        "expr $(git diff --name-only | wc -l) + $(git diff --name-only --cached | wc -l)",
+        shell=True,
+        stdout=subprocess.PIPE,
+    ).stdout.decode()
+)
+if result > 0:
+    print(f"We found {result} modifications either not staged or not commited")
+    raise RuntimeError(
+        "You must stage and commit every modification before submission "
+    )
+
+COMMIT_ID = subprocess.check_output(
+    "git log --pretty=format:'%H' -n 1", shell=True
+).decode()
+
+
 # Ensure the log directory exists
 os.system("mkdir -p logslurms")
 
 
 # Launch the batch jobs
-lr_list = [1e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3]
+lr_list = [1e-5]  # , 5e-5, 1e-4, 2e-4, 5e-4, 1e-3]
 for lr in lr_list:
-    submit_job(makejob(lr))
+    submit_job(makejob(COMMIT_ID, lr))
