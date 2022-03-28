@@ -49,6 +49,7 @@ PICTURES_TEST_CSV = os.path.join(DATA_FOLDER, "pictures_test.csv")
 WEIGHTS_FOLDER = os.path.join(ROOT_FOLDER, "weights")
 
 LOGS_FOLDER = os.path.join(ROOT_FOLDER, "logs")
+TENSORBOARD_FOLDER = os.path.join(LOGS_FOLDER, "tensorboard")
 ALL_PARAMS_CSV = os.path.join(LOGS_FOLDER, "all_params.csv")
 ALL_PARAMS_EXAMPLE_CSV = os.path.join(LOGS_FOLDER, "all_params_example.csv")
 ####################
