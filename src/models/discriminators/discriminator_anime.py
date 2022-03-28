@@ -5,7 +5,7 @@ from torch.nn.utils import spectral_norm
 from src.models.utils.initialization import initialize_weights
 
 
-class Discriminator(nn.Module):
+class AnimeDiscriminator(nn.Module):
     """Discriminator anime"""
 
     def __init__(self, use_sn=True, d_layers=3):

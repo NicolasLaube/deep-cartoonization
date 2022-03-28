@@ -75,8 +75,8 @@ class AnimeGanLoss:
 
     def content_loss_vgg(self, image, recontruction):
         """Content loss for VGG"""
-        feat = self.vgg19(image)
-        re_feat = self.vgg19(recontruction)
+        feat = self.vgg19(image).to(self.device)
+        re_feat = self.vgg19(recontruction).to(self.device)
 
         return self.content_loss(feat, re_feat)
 
