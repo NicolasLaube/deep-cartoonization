@@ -14,8 +14,8 @@ from tqdm import tqdm
 
 from src import config
 from src.base.base_trainer import Trainer
-from src.models.discriminators.discriminator_anime import Discriminator
-from src.models.generators.generator_anim import Generator
+from src.models.discriminators.discriminator_anime import AnimeDiscriminator
+from src.models.generators.generator_anim import AnimeGenerator
 from src.models.losses.loss_anime_gan import AnimeGanLoss
 from src.models.utils.parameters import (
     ArchitectureParams,
@@ -37,11 +37,11 @@ class TrainerAnimeGAN(Trainer):
 
     def load_discriminator(self) -> nn.Module:
         """Loads discriminator"""
-        return Discriminator()
+        return AnimeDiscriminator()
 
     def load_generator(self) -> nn.Module:
         """Loads generator"""
-        return Generator()
+        return AnimeGenerator()
 
     def pretrain(
         self,
@@ -66,14 +66,16 @@ class TrainerAnimeGAN(Trainer):
         for epoch in range(epoch_start, epochs + epoch_start):
             for pictures in tqdm(pictures_loader_train):
 
-                pictures.to(self.device)
+                pictures = pictures.to(self.device)
 
                 self.gen_optimizer.zero_grad()
 
-                gen_cartoon = self.generator(pictures)
-                loss = loss_fn.content_loss_vgg(pictures, gen_cartoon)
+                with torch.autocast(self.device):
 
-                loss.backward()
+                    gen_cartoon = self.generator(pictures)
+                    loss = loss_fn.content_loss_vgg(pictures, gen_cartoon)
+
+                    loss.backward()
                 self.gen_optimizer.step()
 
                 callback_args = {
@@ -109,7 +111,9 @@ class TrainerAnimeGAN(Trainer):
 
                         loss = loss_fn.content_loss_vgg(pictures, gen_cartoons).detach()
 
-                    losses_lists["pretrain_gen_loss"].append(loss)
+                    losses_lists["pretrain_gen_loss"].append(
+                        loss.cpu().detach().numpy()
+                    )
 
             mean_losses = {
                 loss_name: np.mean(values)
