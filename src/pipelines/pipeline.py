@@ -4,7 +4,9 @@ import csv
 import enum
 import logging
 import os
+import random
 import shutil
+import string
 import sys
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
@@ -529,7 +531,8 @@ class Pipeline:
     @staticmethod
     def __get_time_id() -> str:
         """Return an id based on the current time"""
-        return datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
+        # pylint: disable=line-too-long
+        return f"{datetime.now().strftime('%Y_%m_%d-%H_%M_%S')}_{''.join([random.choice(string.ascii_letters) for _ in range(3)])}"
 
     @staticmethod
     def __format_dataclass(
