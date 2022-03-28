@@ -466,7 +466,9 @@ class Pipeline:
         """Return batch callback for pretrain/train"""
         train_state = "pretrain" if pretrain else "train"
         writer = SummaryWriter(
-            f"logs/tensorboard/{self.params['run_id']}_{train_state}"
+            os.path.join(
+                config.TENSORBOARD_FOLDER, f"{self.params['run_id']}_{train_state}"
+            )
         )
 
         def callback(epoch: int, step: int, losses: Dict[str, Any]):
