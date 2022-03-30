@@ -52,6 +52,12 @@ LOGS_FOLDER = os.path.join(ROOT_FOLDER, "logs")
 TENSORBOARD_FOLDER = os.path.join(LOGS_FOLDER, "tensorboard")
 ALL_PARAMS_CSV = os.path.join(LOGS_FOLDER, "all_params.csv")
 ALL_PARAMS_EXAMPLE_CSV = os.path.join(LOGS_FOLDER, "all_params_example.csv")
+
+SCRIPTS_FOLDER = os.path.join(ROOT_FOLDER, "scripts")
+SCP_BASH_SCRIPT = os.path.join(SCRIPTS_FOLDER, "download_folder.sh")
+PASSWORD_PATH = os.path.join(SCRIPTS_FOLDER, "password.txt")
+REMOTE_PARAMS_PATH = os.path.join("logs", "all_params_remote.csv")
+
 ####################
 ### About movies ###
 ####################

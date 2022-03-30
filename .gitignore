@@ -32,3 +32,4 @@ logs/other/logs/*
 !logs/other/logs/.gitkeep
 images/*
 !images/.gitkeep
+**/password.txt

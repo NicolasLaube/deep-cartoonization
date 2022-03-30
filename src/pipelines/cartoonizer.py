@@ -98,7 +98,12 @@ class Cartoonizer:
             raise Exception("Weights path is not defined")
         predictor.load_weights(gen_path=self.gen_path)
 
-        return predictor.cartoonize(pictures=pictures)
+        return [
+            {"picture": picture, "cartoon": cartoon}
+            for (picture, cartoon) in zip(
+                pictures, predictor.cartoonize(pictures=pictures)
+            )
+        ]
 
     def cartoonize_images_from_path(
         self, paths: List[str]
