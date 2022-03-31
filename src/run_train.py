@@ -69,6 +69,13 @@ if __name__ == "__main__":
 
     parser.add_argument("--epochs", type=int, help="The number of epochs", default=60)
 
+    parser.add_argument(
+        "--content-loss-weight",
+        type=float,
+        help="The weight of the content loss for the generator loss",
+        default=1,
+    )
+
     args = parser.parse_args()
 
     ###########################
@@ -107,6 +114,7 @@ if __name__ == "__main__":
     # About training
     BATCH_SIZE = args.batch_size
     LEARNING_RATE = args.lr
+    CONTENT_LOSS_WEIGHT = float(args.content_loss_weight)
 
     #####################################
     ### Then we can build the objects ###
@@ -128,7 +136,10 @@ if __name__ == "__main__":
         batch_size=BATCH_SIZE, gen_lr=LEARNING_RATE, disc_lr=LEARNING_RATE
     )
     TRAINING_PARAMETERS = models.TrainingParams(
-        batch_size=BATCH_SIZE, gen_lr=LEARNING_RATE, disc_lr=LEARNING_RATE
+        batch_size=BATCH_SIZE,
+        gen_lr=LEARNING_RATE,
+        disc_lr=LEARNING_RATE,
+        weight_generator_content_loss=CONTENT_LOSS_WEIGHT,
     )
     INIT_MODEL_PATH = (
         None

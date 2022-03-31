@@ -4,11 +4,11 @@ import os
 import subprocess
 
 
-def makejob(commit_id_param, crop_param):
+def makejob(commit_id_param, cl_weight_param):
     """Makes a new job"""
     return f"""#!/bin/bash
 
-#SBATCH --job-name=cartoongan-fixed-crop2-{crop_param}
+#SBATCH --job-name=cartoongan-fixed-cl_weight-{cl_weight_param}
 #SBATCH --nodes=1
 #SBATCH --partition=gpu_prod_night
 #SBATCH --time=10:00:00
@@ -17,7 +17,7 @@ def makejob(commit_id_param, crop_param):
 
 current_dir=`pwd`
 
-echo "Session " crop2_{crop_param}_${{SLURM_ARRAY_JOB_ID}}
+echo "Session " cl_weight_{cl_weight_param}_${{SLURM_ARRAY_JOB_ID}}
 
 echo "Copying the source directory and data"
 date
@@ -39,7 +39,7 @@ make install
 pip install protobuf==3.9.2
 
 echo "Training"
-python3 -m src.run_train --gen-path weights/pretrained/trained_netG.pth --disc-path weights/pretrained/trained_netD.pth --crop-mode {crop_param}
+python3 -m src.run_train --gen-path weights/pretrained/trained_netG.pth --disc-path weights/pretrained/trained_netD.pth --content-loss-weight {cl_weight_param}
 
 if [[ $? != 0 ]]; then
     exit -1
@@ -88,6 +88,10 @@ os.system("mkdir -p ~/logslurms")
 # for bs in bs_list:
 #     submit_job(makejob(COMMIT_ID, bs))
 
-crop_list = ["Resize", "Center", "Random"]
-for crop in crop_list:
-    submit_job(makejob(COMMIT_ID, crop))
+# crop_list = ["Resize", "Center", "Random"]
+# for crop in crop_list:
+#     submit_job(makejob(COMMIT_ID, crop))
+
+content_loss_weight_list = [0, 0.1, 0.5, 2, 5]
+for content_loss_weight in content_loss_weight_list:
+    submit_job(makejob(COMMIT_ID, content_loss_weight))
