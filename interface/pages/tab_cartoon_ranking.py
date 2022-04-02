@@ -194,8 +194,6 @@ def is_data_in_json(patient_text: str) -> bool:
     with open(HAND_EVALUATION_JSON, encoding="utf-8") as eval_json:
         data = json.load(eval_json)
 
-        print(str(hash(patient_text)))
-
         if str(hash(patient_text)) in data:
             return True
         return False
