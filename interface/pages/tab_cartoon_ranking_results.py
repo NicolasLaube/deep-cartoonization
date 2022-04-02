@@ -1,0 +1,1 @@
+"""Tab cartoon ranking resutls"""
