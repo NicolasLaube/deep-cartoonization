@@ -289,8 +289,7 @@ class Pipeline:
             transform.cartoon_transform,
             self.cartoons_dataset_parameters.nb_images,
             "train" if train else "validation",
-            gray=is_anime,
-            smooth=is_anime,
+            smooth_and_gray=is_anime,
         )
 
     def __init_pictures_dataset(self, train: bool) -> dataset.PicturesDataset:
@@ -306,11 +305,14 @@ class Pipeline:
             architecture=self.architecture,
         )
 
+        anime = self.architecture == models.Architecture.GANAnime
+
         return dataset.PicturesDataset(
             data_filter.picture_filter,
             transform.picture_transform,
             self.pictures_dataset_parameters.nb_images,
             "train" if train else "validation",
+            anime_mode=anime,
         )
 
     def __init_trainer(self) -> Trainer:

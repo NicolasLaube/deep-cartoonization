@@ -1,13 +1,18 @@
 """Generic Image Loader"""
 # pylint: disable=E1101, R0913
+import os
 from typing import Callable, Tuple, Union
 
 import cv2
 import numpy as np
 import pandas as pd
+import torch
 from nptyping import NDArray
+from numpy import asarray
 from PIL import Image
 from torch.utils.data import Dataset
+
+from src.preprocessing.anime.dataset_preprocessing import OfflineDataProcessing
 
 
 class ImageLoader(Dataset):
@@ -19,11 +24,11 @@ class ImageLoader(Dataset):
         filter_data: Callable[[pd.DataFrame], pd.DataFrame],
         transform: Callable[[NDArray], NDArray],
         nb_images: int = -1,
-        smooth: bool = False,
-        gray: bool = False,
+        smooth_and_gray: bool = False,
+        anime_mode: bool = False,
     ) -> None:
-        self.smooth = smooth
-        self.gray = gray
+        self.smooth_and_gray = smooth_and_gray
+        self.anime_mode = anime_mode
         self.filter_data = filter_data
         self.transform = transform
         self.df_images: pd.DataFrame = self.filter_data(
@@ -34,7 +39,7 @@ class ImageLoader(Dataset):
     def set_nb_images(self, nb_images: int) -> None:
         """Set the number of images"""
         # Get the real nb of images to reset...
-        nb_images = min(
+        nb_images = min(  # type: ignore
             nb_images if nb_images > 0 else np.inf,
             len(self.df_images),
         )
@@ -53,83 +58,45 @@ class ImageLoader(Dataset):
         image_path = self.df_images["path"][index]
         image = Image.open(image_path)
         image_transformed = self.transform(image)
-        if not self.gray and not self.smooth:
+
+        if not self.smooth_and_gray and not self.anime_mode:
+
             return image_transformed
-        if self.gray and not self.smooth:
-            return image_transformed, self.transform(self.gray_images(image_path))
-        if self.smooth and not self.gray:
-            return image_transformed, self.transform(self.smooth_image(image_path))
+
+        if not self.smooth_and_gray and self.anime_mode:
+            image = cv2.imread(image_path)
+            # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            image_transformed = asarray(self.transform(Image.fromarray(image)))
+
+            return torch.from_numpy(image_transformed[:, :, ::-1].copy())
+
+        image_gray = self.transform(self.get_gray_image(image_path))[:, :, ::-1]
+        image_gray = image_gray.transpose(2, 0, 1)
+
+        image_smooth_path = image_path.replace("cartoon_frames", "cartoon_edged")
+        if os.path.exists(image_smooth_path):
+            image_smooth = self.transform(cv2.imread(image_smooth_path))[:, :, ::-1]
+            image_smooth = image_smooth.transpose(2, 0, 1)
+        else:
+            image_smooth = OfflineDataProcessing.edge_image(
+                cv2.imread(image_path)[:, :, ::-1]
+            )
+            image_smooth = self.transform(image_smooth)  # Image.fromarray() asarray()
+
+            image_smooth = image_smooth.transpose(2, 0, 1)
 
         return (
             image_transformed,
-            self.transform(self.gray_images(image_path)),
-            self.transform(self.smooth_image(image_path)),
+            image_gray,
+            image_smooth,
         )
 
     @staticmethod
-    def edge_image(image: NDArray) -> NDArray:
-        """Edge image"""
-        # transform image to grayscale
-        image_gray = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
+    def get_gray_image(image_path: str):
+        """Get the gray image"""
+        image = cv2.imread(image_path)
 
-        edges = cv2.Canny(image_gray, 100, 200)
-        kernel_size = 5
-        kernel = np.ones((kernel_size, kernel_size), np.uint8)
-        dilation = cv2.dilate(edges, kernel, iterations=1)
-
-        gauss = cv2.getGaussianKernel(kernel_size, 0)
-        gauss = gauss * gauss.transpose(1, 0)
-
-        pad_image = np.pad(image, ((2, 2), (2, 2), (0, 0)), mode="reflect")
-
-        gauss_image = np.copy(image)
-        idx = np.where(dilation != 0)
-        for i in range(np.sum(dilation != 0)):
-            gauss_image[idx[0][i], idx[1][i], 0] = np.sum(
-                np.multiply(
-                    pad_image[
-                        idx[0][i] : idx[0][i] + kernel_size,
-                        idx[1][i] : idx[1][i] + kernel_size,
-                        0,
-                    ],
-                    gauss,
-                )
-            )
-            gauss_image[idx[0][i], idx[1][i], 1] = np.sum(
-                np.multiply(
-                    pad_image[
-                        idx[0][i] : idx[0][i] + kernel_size,
-                        idx[1][i] : idx[1][i] + kernel_size,
-                        1,
-                    ],
-                    gauss,
-                )
-            )
-            gauss_image[idx[0][i], idx[1][i], 2] = np.sum(
-                np.multiply(
-                    pad_image[
-                        idx[0][i] : idx[0][i] + kernel_size,
-                        idx[1][i] : idx[1][i] + kernel_size,
-                        2,
-                    ],
-                    gauss,
-                )
-            )
-
-        return gauss_image
-
-    @staticmethod
-    def gray_images(image_path: str) -> Image.Image:
-        """Image to gray"""
-        image = cv2.imread(image_path)  # [:, :, ::-1]
         image_gray = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
         image_gray = np.stack([image_gray, image_gray, image_gray], axis=-1)
-        return Image.fromarray(image_gray)
 
-    def smooth_image(self, image_path: str) -> Image.Image:
-        """Smooth image"""
-        image = cv2.imread(image_path)
-        image = self.edge_image(image)
-        image = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
-        image = np.stack([image, image, image], axis=-1)
-        return Image.fromarray(image)
+        return image_gray

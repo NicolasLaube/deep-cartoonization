@@ -19,8 +19,7 @@ class CartoonDataset(ImageLoader):
         transform: Callable[[NDArray], NDArray],
         nb_images: int = -1,
         mode: Literal["train", "validation", "test"] = "train",
-        smooth: bool = False,
-        gray: bool = False,
+        smooth_and_gray: bool = False,
     ) -> None:
         self.train = mode == "train"
         if mode == "train":
@@ -30,7 +29,7 @@ class CartoonDataset(ImageLoader):
         elif mode == "test":
             csv_path = config.CARTOONS_TEST_CSV
         ImageLoader.__init__(
-            self, csv_path, filter_data, transform, nb_images, smooth, gray
+            self, csv_path, filter_data, transform, nb_images, smooth_and_gray
         )
 
 
@@ -49,9 +48,11 @@ if __name__ == "__main__":
         lambda image: image,
         nb_images=10,
         mode="train",
-        smooth=True,
-        gray=True,
+        smooth_and_gray=True,
     )
+
+    for _ in dataset:
+        show_image(_[1].transpose(1, 2, 0))
     # print(dataset.df_images)
     # print(len(dataset))
     # show_image(dataset[0][0])

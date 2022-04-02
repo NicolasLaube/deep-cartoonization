@@ -18,6 +18,7 @@ class PicturesDataset(ImageLoader):
         transform: Callable[[NDArray], NDArray],
         nb_images: int = -1,
         mode: Literal["train", "validation", "test"] = "train",
+        anime_mode: bool = False,
     ) -> None:
         self.train = mode == "train"
         if mode == "train":
@@ -26,4 +27,6 @@ class PicturesDataset(ImageLoader):
             csv_path = config.PICTURES_VALIDATION_CSV
         elif mode == "test":
             csv_path = config.PICTURES_TEST_CSV
-        ImageLoader.__init__(self, csv_path, filter_data, transform, nb_images)
+        ImageLoader.__init__(
+            self, csv_path, filter_data, transform, nb_images, anime_mode=anime_mode
+        )
