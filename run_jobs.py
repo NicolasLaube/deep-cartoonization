@@ -92,7 +92,7 @@ os.system("mkdir -p ~/logslurms")
 # for crop in crop_list:
 #     submit_job(makejob(COMMIT_ID, crop))
 
-content_loss_weight_list = [0, 0.1, 0.5, 2, 5]
+content_loss_weight_list = [0.01, 0.001]
 for content_loss_weight in content_loss_weight_list:
     submit_job(makejob(COMMIT_ID, content_loss_weight))
 
