@@ -33,3 +33,5 @@ logs/other/logs/*
 images/*
 !images/.gitkeep
 **/password.txt
+scripts/**/*.json
+scripts/server/to_download

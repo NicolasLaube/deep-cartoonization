@@ -1,3 +1,4 @@
+from src.models.discriminator import Discriminator
 from src.models.predictor import Predictor
 from src.models.trainer_anime_gan import TrainerAnimeGAN
 from src.models.trainer_fixed_gan import FixedCartoonGANTrainer

@@ -64,10 +64,10 @@ def resize(
     if new_size is None:
         return image
 
-    if crop_mode == CropMode.RESIZE.value:
+    if crop_mode == CropMode.RESIZE:
         return resize_no_crop(image, new_size)
-    if crop_mode == CropMode.CROP_CENTER.value:
+    if crop_mode == CropMode.CROP_CENTER:
         return resize_crop_center(image, new_size)
-    if crop_mode == CropMode.CROP_RANDOM.value:
+    if crop_mode == CropMode.CROP_RANDOM:
         return resize_crop_random(image, new_size)
     return image
