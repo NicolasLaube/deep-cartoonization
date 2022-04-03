@@ -36,4 +36,4 @@ class SSH_CREDENTIALS:  # pylint: disable=invalid-name
 
     HOST = "chome.metz.supelec.fr"
     USER = "gpu_stutz"
-    PASSWORD_PATH = os.path.join(SCRIPTS_FOLDER, "password.txt")
+    PASSWORD_PATH = os.path.join(TOOLS_FOLDER, "password.txt")

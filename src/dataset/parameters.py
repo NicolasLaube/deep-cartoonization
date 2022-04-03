@@ -15,9 +15,9 @@ class ImageDatasetParameters:
     ratio_filter_mode: ratio_filter.RatioFilterMode = (
         ratio_filter.RatioFilterMode.NO_FILTER
     )
-
     crop_mode: resize.CropMode = resize.CropMode.RESIZE
     nb_images: int = -1
+    smoothing_kernel_size: Optional[int] = None
 
 
 @dataclass
