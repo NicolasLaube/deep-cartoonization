@@ -5,7 +5,7 @@ import numpy as np
 from nptyping import NDArray
 
 from src.models.utils.parameters import Architecture
-from src.preprocessing.transformations import resize
+from src.preprocessing.transformations import resize, smooth
 from src.preprocessing.transformations.normalize import Normalizer
 
 
@@ -17,11 +17,13 @@ class Transform:
         architecture: Architecture,
         new_size: Optional[Tuple[int, int]] = (256, 256),
         crop_mode: resize.CropMode = resize.CropMode.RESIZE,
+        smoothing_kernel_size: Optional[int] = None,
         device: str = "cpu",
     ) -> None:
         self.architecture = architecture
         self.new_size = new_size
-        self.crop_mode = crop_mode.value
+        self.crop_mode = crop_mode
+        self.smoothing_kernel_size = smoothing_kernel_size
         self.device = device
         self.normalizer = self.__init_normalizer()
 
@@ -73,6 +75,8 @@ class Transform:
     ) -> NDArray[(Any, Any), np.int32]:
         """Transform images (functions that are common to both frame and picture preprocessing)"""
         image = resize.resize(image, self.new_size, self.crop_mode)
+        if self.smoothing_kernel_size is not None:
+            image = smooth.edge_promoting(image, kernel_size=self.smoothing_kernel_size)
 
         return self.normalizer.normalize(image)
 
