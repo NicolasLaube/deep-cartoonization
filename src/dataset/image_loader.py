@@ -65,26 +65,20 @@ class ImageLoader(Dataset):
 
         if not self.smooth_and_gray and self.anime_mode:
             image = cv2.imread(image_path)
-            # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image_transformed = asarray(self.transform(Image.fromarray(image)))
 
-            return torch.from_numpy(image_transformed[:, :, ::-1].copy())
+            return torch.from_numpy(image_transformed.copy())
 
-        image_gray = self.transform(self.get_gray_image(image_path))[:, :, ::-1]
-        image_gray = image_gray.transpose(2, 0, 1)
+        image_gray = self.transform(Image.fromarray(self.get_gray_image(image_path)))
 
         image_smooth_path = image_path.replace("cartoon_frames", "cartoon_edged")
         if os.path.exists(image_smooth_path):
-            image_smooth = self.transform(cv2.imread(image_smooth_path))[:, :, ::-1]
-            image_smooth = image_smooth.transpose(2, 0, 1)
-        else:
-            image_smooth = OfflineDataProcessing.edge_image(
-                cv2.imread(image_path)[:, :, ::-1]
+            image_smooth = self.transform(
+                Image.fromarray(cv2.imread(image_smooth_path))
             )
-            image_smooth = self.transform(image_smooth)  # Image.fromarray() asarray()
-
-            image_smooth = image_smooth.transpose(2, 0, 1)
-
+        else:
+            image_smooth = OfflineDataProcessing.edge_image(cv2.imread(image_path))
+            image_smooth = self.transform(Image.fromarray(image_smooth))
         return (
             image_transformed,
             image_gray,

@@ -22,4 +22,4 @@ if __name__ == "__main__":
         pretraining_parameters=models.PretrainingParams(batch_size=2),
     )
 
-    pipeline.pretrain(2)
+    pipeline.train(2)
