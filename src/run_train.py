@@ -76,6 +76,13 @@ if __name__ == "__main__":
         default=1,
     )
 
+    parser.add_argument(
+        "--smoothing-kernel-size",
+        type=int,
+        help="The kernel size for the smoothing parameter (0 for no smoothing)",
+        default=0,
+    )
+
     args = parser.parse_args()
 
     ###########################
@@ -110,11 +117,14 @@ if __name__ == "__main__":
         "Landscape": preprocessing.RatioFilterMode.FILTER_LANDSCAPE,
     }
     RATIO_FILTER_MODE = ratio_filter_modes[args.ratio_filter]
+    SMOOTHING_KERNEL_SIZE = (
+        None if args.smoothing_kernel_size == 0 else args.smoothing_kernel_size
+    )
 
     # About training
     BATCH_SIZE = args.batch_size
     LEARNING_RATE = args.lr
-    CONTENT_LOSS_WEIGHT = float(args.content_loss_weight)
+    CONTENT_LOSS_WEIGHT = args.content_loss_weight
 
     #####################################
     ### Then we can build the objects ###
@@ -125,12 +135,14 @@ if __name__ == "__main__":
         crop_mode=CROP_MODE,
         ratio_filter_mode=RATIO_FILTER_MODE,
         nb_images=NB_IMAGES,
+        smoothing_kernel_size=SMOOTHING_KERNEL_SIZE,
     )
     PICTURES_DATASET_PARAMETERS = dataset.PicturesDatasetParameters(
         new_size=NEW_SIZE,
         crop_mode=CROP_MODE,
         ratio_filter_mode=RATIO_FILTER_MODE,
         nb_images=NB_IMAGES,
+        smoothing_kernel_size=SMOOTHING_KERNEL_SIZE,
     )
     PRETRAINING_PARAMETERS = models.PretrainingParams(
         batch_size=BATCH_SIZE, gen_lr=LEARNING_RATE, disc_lr=LEARNING_RATE
