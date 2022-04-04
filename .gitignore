@@ -34,4 +34,4 @@ images/*
 !images/.gitkeep
 **/password.txt
 scripts/**/*.json
-scripts/server/to_download
+scripts/server/downloaded_temp
