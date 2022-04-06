@@ -100,6 +100,6 @@ os.system("mkdir -p ~/logslurms")
 # for new_size in new_size_list:
 #     submit_job(makejob(COMMIT_ID, new_size))
 
-smooth_params_list = [1, 3, 5, 10]
+smooth_params_list = [3, 5]  # [1, 3, 5, 10]
 for smooth in smooth_params_list:
     submit_job(makejob(COMMIT_ID, smooth))
