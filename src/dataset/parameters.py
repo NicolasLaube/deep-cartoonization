@@ -17,7 +17,7 @@ class ImageDatasetParameters:
     )
     crop_mode: resize.CropMode = resize.CropMode.RESIZE
     nb_images: int = -1
-    smoothing_kernel_size: Optional[int] = None
+    smoothing_kernel_size: int = 0
 
 
 @dataclass
