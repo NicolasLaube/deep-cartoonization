@@ -17,7 +17,7 @@ class Transform:
         architecture: Architecture,
         new_size: Optional[Tuple[int, int]] = (256, 256),
         crop_mode: resize.CropMode = resize.CropMode.RESIZE,
-        smoothing_kernel_size: Optional[int] = None,
+        smoothing_kernel_size: int = 0,
         device: str = "cpu",
     ) -> None:
         self.architecture = architecture
@@ -75,7 +75,7 @@ class Transform:
     ) -> NDArray[(Any, Any), np.int32]:
         """Transform images (functions that are common to both frame and picture preprocessing)"""
         image = resize.resize(image, self.new_size, self.crop_mode)
-        if self.smoothing_kernel_size is not None:
+        if self.smoothing_kernel_size > 0:
             image = smooth.edge_promoting(image, kernel_size=self.smoothing_kernel_size)
 
         return self.normalizer.normalize(image)
