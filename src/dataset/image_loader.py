@@ -64,7 +64,7 @@ class ImageLoader(Dataset):
             return image_transformed
 
         if not self.smooth_and_gray and self.anime_mode:
-            image = cv2.imread(image_path)
+            image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
             image_transformed = asarray(self.transform(Image.fromarray(image)))
 
             return torch.from_numpy(image_transformed.copy())
@@ -74,10 +74,12 @@ class ImageLoader(Dataset):
         image_smooth_path = image_path.replace("cartoon_frames", "cartoon_edged")
         if os.path.exists(image_smooth_path):
             image_smooth = self.transform(
-                Image.fromarray(cv2.imread(image_smooth_path))
+                Image.fromarray(cv2.imread(image_smooth_path, cv2.COLOR_BGR2RGB))
             )
         else:
-            image_smooth = OfflineDataProcessing.edge_image(cv2.imread(image_path))
+            image_smooth = OfflineDataProcessing.edge_image(
+                cv2.imread(image_path, cv2.COLOR_BGR2RGB)
+            )
             image_smooth = self.transform(Image.fromarray(image_smooth))
         return (
             image_transformed,
@@ -88,7 +90,7 @@ class ImageLoader(Dataset):
     @staticmethod
     def get_gray_image(image_path: str):
         """Get the gray image"""
-        image = cv2.imread(image_path)
+        image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
 
         image_gray = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2GRAY)
         image_gray = np.stack([image_gray, image_gray, image_gray], axis=-1)

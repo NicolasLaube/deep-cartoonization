@@ -52,7 +52,7 @@ if __name__ == "__main__":
     )
 
     for _ in dataset:
-        show_image(_[1].transpose(1, 2, 0))
+        show_image(_[1])
     # print(dataset.df_images)
     # print(len(dataset))
     # show_image(dataset[0][0])
