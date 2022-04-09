@@ -4,6 +4,7 @@ import logging
 import os
 from typing import Dict, List, Optional
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 from PIL import Image
@@ -52,9 +53,12 @@ class PipelineTransferStyle:
         self.model = self.__init_model()
 
         self.params = transfer_params
-
-        self.content_loss = nn.MSELoss()
-        self.style_loss = GramMSELoss()
+        if torch.cuda.is_available():
+            self.content_loss = nn.MSELoss().cuda()
+            self.style_loss = GramMSELoss().cuda()
+        else:
+            self.content_loss = nn.MSELoss()
+            self.style_loss = GramMSELoss()
         if similar_images_csv is not None:
             self.similar_predictor = None
             self.similar_images_csv = pd.read_csv(similar_images_csv)
@@ -111,10 +115,18 @@ class PipelineTransferStyle:
             return Image.open(similar_cartoon_path)
         raise ValueError("Image not found in csv")
 
-    def cartoonize_image(self, image_path: str) -> Image.Image:
+    def cartoonize_image(self, image_path: str, verbose: bool = False) -> Image.Image:
         """Cartoonize an image"""
         content_image = Image.open(image_path)
         style_cartoon = self.__get_similar_cartoon(image_path)
+
+        if verbose:
+            print("Content Image:")
+            plt.imshow(content_image)
+            plt.show()
+            print("Style Image:")
+            plt.imshow(style_cartoon)
+            plt.show()
 
         content_image = preprocess(content_image)
         style_cartoon = preprocess(style_cartoon)
@@ -135,11 +147,19 @@ class PipelineTransferStyle:
             for layer_id, A in self.model(content_image, self.params.content_layers)
         }
 
+        if torch.cuda.is_available():
+            style_targets = {
+                layer_id: A.cuda() for layer_id, A in style_targets.items()
+            }
+            content_targets = {
+                layer_id: A.cuda() for layer_id, A in content_targets.items()
+            }
+
         generated_image = Variable(content_image.data.clone(), requires_grad=True)
 
         optimizer = self.__get_optimizer(generated_image)
 
-        for _ in tqdm(range(self.params.epochs)):
+        for epoch in tqdm(range(self.params.epochs)):
 
             def closure():
                 """Closure function for optimizer"""
@@ -168,6 +188,10 @@ class PipelineTransferStyle:
 
                 loss.backward()  # type: ignore
                 return loss
+
+            if epoch % 10 == 0:
+                plt.imshow(postprocess(generated_image.data[0].cpu().squeeze()))
+                plt.show()
 
             optimizer.step(closure)
 
