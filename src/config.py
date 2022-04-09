@@ -83,3 +83,13 @@ RANDOM_STATE = 42
 NUM_WORKERS = 2
 SAVE_EVERY_MIN = 15
 DEFAULT_BATCH_SIZE = 16
+
+
+#######################
+### Classifier params ###
+#######################
+
+CLASSIFIER_WEIGHTS = os.path.join(
+    ROOT_FOLDER, "weights", "classifier", "cartoon_classifier_9.pth"
+)
+RANDOM_STATE = 11

@@ -34,7 +34,7 @@ class ImageLoader(Dataset):
     def set_nb_images(self, nb_images: int) -> None:
         """Set the number of images"""
         # Get the real nb of images to reset...
-        nb_images = min(
+        nb_images = min(  # type: ignore
             nb_images if nb_images > 0 else np.inf,
             len(self.df_images),
         )
