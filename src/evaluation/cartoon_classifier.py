@@ -1,12 +1,11 @@
 """Cartoon classifier"""
-from typing import Optional
 
-import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
 from torch import nn
 from torch.utils.data import DataLoader
+from torchsummary import summary
 from torchvision import models, transforms
 from tqdm import tqdm
 
@@ -17,24 +16,26 @@ from src.dataset.dataset_classification import CustomImageDataset
 class CartoonClassifier:
     """Cartoon Classifier"""
 
-    def __init__(self, model_path: Optional[str] = config.CLASSIFIER_WEIGHTS) -> None:
+    def __init__(self) -> None:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.model = self.load_model(model_path)
+        self.model = self.__init_model()
 
-    def load_model(self, model_path: Optional[str] = None):
+    @staticmethod
+    def __init_model():
+        """Initialize the model"""
+        model = models.resnet101(pretrained=True)
+        for param in model.parameters():
+            param.requires_grad = False
+
+        nb_features = model.fc.in_features
+
+        model.fc = nn.Linear(nb_features, 2)
+        return model
+
+    def load_model(self, model_path: str = config.CLASSIFIER_WEIGHTS):
         """Load the model"""
-        if model_path is None:
-            pretrained_model = models.resnet101(pretrained=True)
-            for param in pretrained_model.parameters():
-                param.requires_grad = False
-
-            nb_features = pretrained_model.fc.in_features
-
-            pretrained_model.fc = nn.Linear(nb_features, 2)
-
-            return pretrained_model.to(self.device)
-
-        return torch.load(model_path)
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
+        summary(self.model, (3, 224, 224))
 
     @staticmethod
     def preprocess_train():
@@ -126,22 +127,24 @@ class CartoonClassifier:
         true_negatif = 0
         false_positif = 0
         false_negatif = 0
-        for cartoon_or_image, label in tqdm(test_loader):
+        for cartoon_or_image, labels in tqdm(test_loader):
             cartoon_or_image = cartoon_or_image.to(self.device)
 
             output = self.model(cartoon_or_image)
             _, preds = torch.max(output, 1)
 
-            if preds[0] == label:
-                if preds[0] == 0:
-                    true_negatif += 1
+            for pred, label in zip(preds, labels):
+
+                if pred.item() == label.item():
+                    if pred.item() == 0:
+                        true_negatif += 1
+                    else:
+                        true_positif += 1
                 else:
-                    true_positif += 1
-            else:
-                if preds[0] == 0:
-                    false_negatif += 1
-                else:
-                    false_positif += 1
+                    if pred.item() == 0:
+                        false_negatif += 1
+                    else:
+                        false_positif += 1
 
         print(f"True positive: {true_positif}")
         print(f"True negative: {true_negatif}")
@@ -162,28 +165,14 @@ class CartoonClassifier:
         """Save the model"""
         torch.save(self.model, model_path)
 
-    def predict_from_array(self, image: np.ndarray):
-        """Predict the class of an image"""
-        image = image.transpose(2, 0, 1)
-        image_torch = torch.from_numpy(image).float()
-        image_torch = image_torch.unsqueeze(0)
-        image_torch = image_torch.to(self.device)
-        image_torch = self.preprocess_validation()(image_torch)
-
-        output = self.model(image_torch)
-        _, preds = torch.max(output, 1)
-        return preds.item()
-
     def predict_from_path(self, image_path: str):
         """Predict the class of an image"""
         image = Image.open(image_path)
 
         image = self.preprocess_validation()(image)
         image = image.to(self.device)
-        image = image.to(self.device)
-        image = self.preprocess_validation()(image)
 
-        output = self.model(image)
+        output = self.model(image.unsqueeze(0))
         _, preds = torch.max(output, 1)
         return preds.item()
 
@@ -193,9 +182,9 @@ if __name__ == "__main__":
 
     # ONLY IMAGES IN THE "CARTOONIZATION TRAIN DATASET" ARE USED FOR TRAINING AND TESTING
 
-    IMAGE_DF = pd.read_csv("cartoongan/data/pictures_train.csv")
+    IMAGE_DF = pd.read_csv("data/pictures_train.csv")
     IMAGE_DF["label"] = 0
-    CARTOONS_DF = pd.read_csv("cartoongan/data/cartoons_train.csv")
+    CARTOONS_DF = pd.read_csv("data/cartoons_train.csv")
     CARTOONS_DF["label"] = 1
 
     ALL_DATA = pd.concat([IMAGE_DF, CARTOONS_DF], axis=0)
@@ -220,6 +209,15 @@ if __name__ == "__main__":
     )
 
     CARTOON_CLASSIFIER = CartoonClassifier()
+    CARTOON_CLASSIFIER.load_model()
 
-    CARTOON_CLASSIFIER.train(DF_TRAIN, DF_VAL)
-    CARTOON_CLASSIFIER.test(DF_TEST)
+    # CARTOON_CLASSIFIER.train(DF_TRAIN, DF_VAL)
+    # CARTOON_CLASSIFIER.test(DF_TEST)
+    print(
+        CARTOON_CLASSIFIER.predict_from_path("data/flickr/Images/667626_18933d713e.jpg")
+    )
+    print(
+        CARTOON_CLASSIFIER.predict_from_path(
+            "data/cartoon_frames/BabyBoss/frame0-01-04.40.jpg"
+        )
+    )
