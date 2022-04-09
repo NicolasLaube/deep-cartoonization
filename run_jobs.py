@@ -4,11 +4,11 @@ import os
 import subprocess
 
 
-def makejob(commit_id_param, smooth_param):
+def makejob(commit_id_param, content_loss_param):
     """Makes a new job"""
     return f"""#!/bin/bash
 
-#SBATCH --job-name=cartoongan-fixed-smooth2-{smooth_param}
+#SBATCH --job-name=cartoongan-fixed-cl3-{content_loss_param}
 #SBATCH --nodes=1
 #SBATCH --partition=gpu_prod_night
 #SBATCH --time=10:00:00
@@ -17,7 +17,7 @@ def makejob(commit_id_param, smooth_param):
 
 current_dir=`pwd`
 
-echo "Session " smooth2_{smooth_param}_${{SLURM_ARRAY_JOB_ID}}
+echo "Session " cl3_{content_loss_param}_${{SLURM_ARRAY_JOB_ID}}
 
 echo "Copying the source directory and data"
 date
@@ -39,7 +39,7 @@ make install
 pip install protobuf==3.9.2
 
 echo "Training"
-python3 -m src.run_train --gen-path weights/pretrained/trained_netG.pth --disc-path weights/pretrained/trained_netD.pth --smoothing-kernel-size {smooth_param}
+python3 -m src.run_train --gen-path weights/pretrained/trained_netG.pth --disc-path weights/pretrained/trained_netD.pth --content-loss-weight {content_loss_param}
 
 if [[ $? != 0 ]]; then
     exit -1
@@ -92,14 +92,14 @@ os.system("mkdir -p ~/logslurms")
 # for crop in crop_list:
 #     submit_job(makejob(COMMIT_ID, crop))
 
-# content_loss_weight_list = [0.01, 0.001]
-# for content_loss_weight in content_loss_weight_list:
-#     submit_job(makejob(COMMIT_ID, content_loss_weight))
+content_loss_weight_list = [0.0025, 0.005, 0.0075]
+for content_loss_weight in content_loss_weight_list:
+    submit_job(makejob(COMMIT_ID, content_loss_weight))
 
 # new_size_list = [128, 512, 1024]
 # for new_size in new_size_list:
 #     submit_job(makejob(COMMIT_ID, new_size))
 
-smooth_params_list = [3, 5]  # [1, 3, 5, 10]
-for smooth in smooth_params_list:
-    submit_job(makejob(COMMIT_ID, smooth))
+# smooth_params_list = [3, 5]  # [1, 3, 5, 10]
+# for smooth in smooth_params_list:
+#     submit_job(makejob(COMMIT_ID, smooth))
