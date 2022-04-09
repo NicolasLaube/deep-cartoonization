@@ -7,6 +7,7 @@ from src.models.utils.parameters import (
     ArchitectureParams,
     ArchitectureParamsModular,
     ArchitectureParamsNULL,
+    InferingParams,
     PretrainingParams,
     TrainingParams,
 )

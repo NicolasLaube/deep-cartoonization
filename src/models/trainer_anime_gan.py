@@ -187,7 +187,7 @@ class TrainerAnimeGAN(Trainer):
                 # for param in self.discriminator.parameters():
                 #     param.requires_grad = True
 
-                with torch.autocast(self.device):
+                with self.autocast():
                     gen_cartoons = self.generator(pictures)
 
                     disc_fake = self.discriminator(gen_cartoons.detach())
@@ -218,7 +218,7 @@ class TrainerAnimeGAN(Trainer):
                 for param in self.discriminator.parameters():
                     param.requires_grad = False
 
-                with torch.autocast(self.device):
+                with self.autocast():
                     gen_cartoons = self.generator(pictures)
 
                     disc_fake = self.discriminator(gen_cartoons)
@@ -283,7 +283,7 @@ class TrainerAnimeGAN(Trainer):
                     # Discriminator validation #
                     ############################
 
-                    with torch.autocast(self.device):
+                    with self.autocast():
                         gen_cartoons = self.generator(pictures)
 
                         disc_fake = self.discriminator(gen_cartoons.detach())
@@ -305,7 +305,7 @@ class TrainerAnimeGAN(Trainer):
                     # Generator validation #
                     ########################
 
-                    with torch.autocast(self.device):
+                    with self.autocast():
                         gen_cartoons = self.generator(pictures)
 
                         disc_fake = self.discriminator(gen_cartoons)

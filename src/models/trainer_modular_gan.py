@@ -104,7 +104,7 @@ class ModularGANTrainer(Trainer):
 
                     self.generator.zero_grad()
 
-                    with torch.autocast(self.device):
+                    with self.autocast():
 
                         gen_cartoons = self.generator(pictures)
                         reconstruction_loss = content_loss(
@@ -223,7 +223,10 @@ class ModularGANTrainer(Trainer):
 
                 reconstruction_loss = content_loss(gen_cartoons, pictures)
 
-                gen_loss = disc_fake_loss + reconstruction_loss
+                gen_loss = (
+                    train_params.weight_generator_bce_loss * disc_fake_loss
+                    + train_params.weight_generator_content_loss * reconstruction_loss
+                )
 
                 gen_loss.backward()
                 self.gen_optimizer.step()
@@ -269,7 +272,7 @@ class ModularGANTrainer(Trainer):
                     # Discriminator validation #
                     ############################
 
-                    with torch.autocast(self.device):
+                    with self.autocast():
                         disc_real_cartoons = self.discriminator(cartoons)
                         disc_real_cartoon_loss = bce_loss(disc_real_cartoons, real)
 
@@ -285,7 +288,7 @@ class ModularGANTrainer(Trainer):
                     # Generator validation #
                     ########################
 
-                    with torch.autocast(self.device):
+                    with self.autocast():
                         generated_image = self.generator(cartoons)
                         disc_fake = self.discriminator(generated_image)
                         disc_fake_loss = bce_loss(disc_fake, real)
