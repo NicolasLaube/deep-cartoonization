@@ -81,7 +81,9 @@ class PipelineTransferStyle:
     def __get_optimizer(self, generated_image):
         """Get the optimizer"""
         if self.params.optimizer == "lbfgs":
-            optimizer = optim.LBFGS([generated_image.requires_grad_()])
+            optimizer = optim.LBFGS(
+                [generated_image.requires_grad_()], lr=self.params.learning_rate
+            )
         elif self.params.optimizer == "adam":
             optimizer = optim.Adam(
                 [generated_image.requires_grad_()], lr=self.params.learning_rate
