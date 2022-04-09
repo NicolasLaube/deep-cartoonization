@@ -63,4 +63,4 @@ class VGGStyleTransfer(nn.Module):
         out["r53"] = F.relu(self.conv5_3(out["r52"]))
         out["r54"] = F.relu(self.conv5_4(out["r53"]))
         out["p5"] = self.pool5(out["r54"])
-        return [out[key] for key in out_keys]
+        return [(key, out[key]) for key in out_keys]

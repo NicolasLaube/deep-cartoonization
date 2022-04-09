@@ -33,9 +33,9 @@ class PredictorSimilarCartoon:
         # remove the output layer
         return Model(inputs=model.inputs, outputs=model.layers[-2].output)
 
-    def __get_cluster_groups(self) -> Dict[str, List[str]]:
+    def __get_cluster_groups(self) -> Dict[int, List[str]]:
         """Get the cluster groups"""
-        cluster_groups: Dict[str, List[str]] = {}
+        cluster_groups: Dict[int, List[str]] = {}
         for file_name, cluster in zip(self.cartoons_paths, self.kmeans.labels_):
             if cluster not in cluster_groups.keys():
                 cluster_groups[cluster] = [file_name]
@@ -73,16 +73,16 @@ class PredictorSimilarCartoon:
         image = preprocess_input(reshaped_image)
         return self.model.predict(image, use_multiprocessing=True)[0]
 
-    def __get_best_cluster(self, image_features: np.ndarray) -> str:
+    def __get_best_cluster(self, image_features: np.ndarray) -> int:
         """Get the best cluster"""
 
         reduced_features = self.pca.transform(np.array([image_features]))
 
-        return str(self.kmeans.predict(reduced_features)[0])
+        return int(self.kmeans.predict(reduced_features)[0])
 
-    def get_most_similar_image(self, image_path: str) -> str:
+    def get_most_similar_image(self, image_path: str) -> Tuple[str, float]:
         """Get the most similar image"""
-        return str(self.get_n_most_similar_images(image_path, 1)[0])
+        return self.get_n_most_similar_images(image_path, 1)[0]
 
     def get_n_most_similar_images(
         self, image_path: str, number_images: int
