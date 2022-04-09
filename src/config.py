@@ -84,3 +84,29 @@ RANDOM_STATE = 42
 NUM_WORKERS = 2
 SAVE_EVERY_MIN = 15
 DEFAULT_BATCH_SIZE = 16
+
+
+#######################
+### Style Transfer  ###
+#######################
+
+IMAGE_SIZE = 512
+VGG_STYLE_TRANSFERT_WEIGHTS = os.path.join(
+    ROOT_FOLDER, "weights", "style_transfert", "vgg_conv.pth"
+)
+KMEANS_WEIGHTS = os.path.join(ROOT_FOLDER, "weights", "style_transfert", "kmeans.pkl")
+PCA_WEIGHTS = os.path.join(ROOT_FOLDER, "weights", "style_transfert", "pca.pkl")
+
+CARTOON_FEATURES_SAVE_PATH = os.path.join(ROOT_FOLDER, "data", "cartoon_features")
+SIMILAR_IMAGES_CSV_PATH = os.path.join(ROOT_FOLDER, "data", "similar_images.csv")
+
+DEFAULT_STYLE_LAYERS = ["r11", "r21", "r31", "r41", "r51"]
+DEFAULT_CONTENT_LAYERS = ["r42"]
+DEFAULT_STYLE_CONTENT_WEIGHTS = {
+    "r11": 1e3 / 64 ** 2,
+    "r21": 1e3 / 128 ** 2,
+    "r31": 1e3 / 256 ** 2,
+    "r41": 1e3 / 512 ** 2,
+    "r51": 1e3 / 512 ** 2,
+    "r42": 1e0,
+}

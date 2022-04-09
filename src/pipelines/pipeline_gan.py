@@ -551,7 +551,7 @@ class Pipeline:
 
 if __name__ == "__main__":
     pipeline = Pipeline(
-        architecture=models.Architecture.GANFixed,
+        architecture=models.Architecture.GANAnime,
         architecture_params=models.ArchitectureParamsNULL(),
         cartoons_dataset_parameters=dataset.CartoonsDatasetParameters(
             new_size=(256, 256),
@@ -564,12 +564,9 @@ if __name__ == "__main__":
             ratio_filter_mode=preprocessing.RatioFilterMode.NO_FILTER,
             nb_images=4,
         ),
-        init_models_paths=ModelPathsParameters(
-            gen_path="weights/pretrained/trained_netG.pth",
-            disc_path="weights/pretrained/trained_netD.pth",
-        ),
+        init_models_paths=None,
         training_parameters=models.TrainingParams(batch_size=2),
         pretraining_parameters=models.PretrainingParams(batch_size=2),
     )
 
-    pipeline.train(2)
+    pipeline.pretrain(2)
