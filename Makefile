@@ -20,3 +20,6 @@ test:
 		pytest -m "not models and not evaluators"
 
 tests: test
+
+demonstrator:
+		streamlit run interface/streamlit_demonstrator.py
