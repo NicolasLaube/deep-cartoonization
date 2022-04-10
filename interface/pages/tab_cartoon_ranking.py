@@ -7,8 +7,10 @@ from itertools import chain
 from random import shuffle
 from typing import Dict, List
 
+import numpy as np
 import pandas as pd
 import streamlit as st
+from PIL import Image
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -25,8 +27,17 @@ def filter_images_are_inresults_folder(df: pd.DataFrame) -> pd.DataFrame:
     """Filter images are inresults folder"""
     cartoons_results = get_cartoons_results_folders()
     all_cartoons = list(chain(*cartoons_results.values()))
-    all_cartoons = [cartoon.split("\\")[-1] for cartoon in all_cartoons]
-    df["is_in_results"] = df["name"].apply(lambda x: x in all_cartoons)
+    all_cartoons = [
+        cartoon.split("\\")[-1]
+        .replace(".jpg", "")
+        .replace(".npy", "")
+        .replace(".png", "")
+        for cartoon in all_cartoons
+    ]
+    df["is_in_results"] = df["name"].apply(
+        lambda x: x.replace(".jpg", "").replace(".png", "").replace(".npy", "")
+        in all_cartoons
+    )
 
     return df[df["is_in_results"]].drop_duplicates(subset=["name"], keep="last")
 
@@ -71,6 +82,22 @@ def list_cartoons_from_image(image_path: str) -> List[str]:
         ]:
             cartoons_from_image.append(
                 os.path.join("data", "results", folder, image_path)
+            )
+        elif image_path.replace(".jpg", ".png") in [
+            path.split("\\")[-1] for path in cartoons_results_folder[folder]
+        ]:
+            cartoons_from_image.append(
+                os.path.join(
+                    "data", "results", folder, image_path.replace(".jpg", ".png")
+                )
+            )
+        if image_path.replace(".jpg", ".npy") in [
+            path.split("\\")[-1] for path in cartoons_results_folder[folder]
+        ]:
+            cartoons_from_image.append(
+                os.path.join(
+                    "data", "results", folder, image_path.replace(".jpg", ".npy")
+                )
             )
 
     return cartoons_from_image
@@ -136,7 +163,13 @@ def tab_cartoon_ranking():
 
                 with col2:
 
-                    st.image(cartoon_path)
+                    if ".npy" in cartoon_path:
+                        img_array = np.load(cartoon_path)
+
+                        cartoon = Image.fromarray(img_array)
+                        st.image(cartoon)
+                    else:
+                        st.image(cartoon_path)
 
                 with st.expander("Spoiler 👻"):
                     st.write("Model name is ", cartoon_path.split("\\")[-2])
