@@ -1,5 +1,6 @@
 """Cartoon classifier"""
 
+import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
@@ -167,7 +168,12 @@ class CartoonClassifier:
 
     def predict_from_path(self, image_path: str):
         """Predict the class of an image"""
-        image = Image.open(image_path)
+        if ".npy" in image_path:
+            image = np.load(image_path)
+            image = Image.fromarray(image)
+        else:
+
+            image = Image.open(image_path)
 
         image = self.preprocess_validation()(image)
         image = image.to(self.device)
@@ -176,8 +182,36 @@ class CartoonClassifier:
         _, preds = torch.max(output, 1)
         return preds.item()
 
+    def evaluate_from_folder(self, folder_path: str):
+        """Evaluates from folder"""
+        files = os.listdir(folder_path)
+        files = [os.path.join(folder_path, file) for file in files]
+
+        true_positif = 0
+        false_negatif = 0
+
+        for file in tqdm(files):
+            pred = self.predict_from_path(file)
+            if pred == 0:
+                false_negatif += 1
+            else:
+                true_positif += 1
+
+        print(f"True positive: {true_positif}")
+        print(f"False negative: {false_negatif}")
+
+        print(
+            f"""Accuracy: {(true_positif) /
+            (true_positif + false_negatif)}"""
+        )
+        print(f"Precision: {true_positif / (true_positif)}")
+        print(f"Recall: {true_positif / (true_positif + false_negatif)}")
+        print(f"F1 score: {2 * true_positif / (2 * true_positif + false_negatif)}")
+
 
 if __name__ == "__main__":
+    import os
+
     from sklearn.model_selection import train_test_split
 
     # ONLY IMAGES IN THE "CARTOONIZATION TRAIN DATASET" ARE USED FOR TRAINING AND TESTING
@@ -213,11 +247,15 @@ if __name__ == "__main__":
 
     # CARTOON_CLASSIFIER.train(DF_TRAIN, DF_VAL)
     # CARTOON_CLASSIFIER.test(DF_TEST)
-    print(
-        CARTOON_CLASSIFIER.predict_from_path("data/flickr/Images/667626_18933d713e.jpg")
-    )
-    print(
-        CARTOON_CLASSIFIER.predict_from_path(
-            "data/cartoon_frames/BabyBoss/frame0-01-04.40.jpg"
-        )
+    # print(
+    #     CARTOON_CLASSIFIER.predict_from_path("data/flickr/Images/667626_18933d713e.jpg")
+    # )
+    # print(
+    #     CARTOON_CLASSIFIER.predict_from_path(
+    #         "data/cartoon_frames/BabyBoss/frame0-01-04.40.jpg"
+    #     )
+    # )
+
+    CARTOON_CLASSIFIER.evaluate_from_folder(
+        "data/results/lr_0.1_epoch_20_optimizer_lbfgs"
     )

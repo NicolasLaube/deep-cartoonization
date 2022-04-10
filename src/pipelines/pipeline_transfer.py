@@ -281,11 +281,11 @@ class PipelineTransferStyle:
 
         if verbose:
 
-            self.plot_loss(total_loss_history, "Total Loss")
+            self.plot_loss(total_loss_history, f"Total Loss, image {image_path}")
             print("Total Loss:", total_loss_history[-1])
-            self.plot_loss(content_loss_history, "Content Loss")
+            self.plot_loss(content_loss_history, f"Content Loss {image_path}")
             print("Content Loss:", content_loss_history[-1])
-            self.plot_loss(style_loss_history, "Style Loss")
+            self.plot_loss(style_loss_history, f"Style Loss {image_path}")
             print("Style Loss:", style_loss_history[-1])
 
         return postprocess(generated_image.data[0].cpu().squeeze())
@@ -295,7 +295,7 @@ class PipelineTransferStyle:
         plt.plot(loss_history)
         plt.title(title)
         plt.show()
-        plt.savefig(os.path.join(self.params.save_path, f"{title}.png"))
+        plt.savefig(os.path.join(self.params.save_path, f"{title}.jpg"))
 
 
 if __name__ == "__main__":
