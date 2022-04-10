@@ -1,10 +1,12 @@
 """Pipeline style transfer"""
 # pylint: disable=R0913, E1136, E1101
+import csv
 import logging
 import os
 from typing import Dict, List, Optional
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import torch
 from PIL import Image
@@ -22,17 +24,19 @@ from src.preprocessing.transformations.transformations_style_tranfer import (
 )
 
 
-class StyleTransferParameters:  # pylint: disable=W0102
+class StyleTransferParameters:  # pylint: disable=W0102, R0902
     """Style Transfer paramereters"""
 
     def __init__(
         self,
+        save_path: str,
         epochs: int = 1000,
         learning_rate: float = 1e-4,
         optimizer: str = "lbfgs",
         style_layers: List[str] = config.DEFAULT_STYLE_LAYERS,
         content_layers: List[str] = config.DEFAULT_CONTENT_LAYERS,
         weights: Dict[str, float] = config.DEFAULT_STYLE_CONTENT_WEIGHTS,
+        num_similar_cartoons: int = config.DEFAULT_NUM_SIMILAR_CARTOONS,
     ) -> None:
         self.epochs = epochs
         self.learning_rate = learning_rate
@@ -40,6 +44,8 @@ class StyleTransferParameters:  # pylint: disable=W0102
         self.style_layers = style_layers
         self.content_layers = content_layers
         self.weights = weights
+        self.save_path = save_path
+        self.num_similar_cartoons = num_similar_cartoons
 
 
 class PipelineTransferStyle:
@@ -100,12 +106,14 @@ class PipelineTransferStyle:
                 raise ValueError("Predictor is not defined")
             (
                 style_cartoon_features_path,
-                _,
+                score,
             ) = self.similar_predictor.get_most_similar_image(content_image_path)
+            print(f"Most similar cartoon: {style_cartoon_features_path}")
+            print(f"Similarity score: {score}")
             style_cartoon_path = style_cartoon_features_path.replace(
                 "cartoon_features", "cartoon_frames"
             ).replace("npy", "jpg")
-            return Image.open(style_cartoon_path)
+            return Image.open(style_cartoon_path), score
 
         logging.info("Using similar cartoon csv")
         content_image_name = os.path.basename(content_image_path)
@@ -114,13 +122,62 @@ class PipelineTransferStyle:
                 self.similar_images_csv["name"] == content_image_name
             ][f"similar_cartoon_{index}"].values[0]
             similar_cartoon_path = similar_cartoon_path.replace("cartoongan/", "")
-            return Image.open(similar_cartoon_path)
+            return Image.open(similar_cartoon_path), None
         raise ValueError("Image not found in csv")
 
-    def cartoonize_image(self, image_path: str, verbose: bool = False) -> Image.Image:
+    def save_and_plot(
+        self,
+        image_path,
+        local_gen,
+        epoch,
+        total_loss_history,
+        content_loss_history,
+        style_loss_history,
+        similarity,
+    ):
+        """Save and plot"""
+        plt.imshow(local_gen)
+        plt.show()
+        gen_save_path = os.path.join(
+            self.params.save_path,
+            os.path.basename(image_path.replace(".jpg", f"_{epoch}.npy")),
+        )
+        np.save(gen_save_path, np.asarray(local_gen))
+
+        loss_file_path = os.path.join(self.params.save_path, "loss.csv")
+        if not os.path.exists(loss_file_path):
+            with open(loss_file_path, "w", encoding="utf-8") as loss_file:
+                writer = csv.writer(loss_file)
+                writer.writerow(
+                    [
+                        "image",
+                        "epoch",
+                        "total_loss",
+                        "content_loss",
+                        "style_loss",
+                        "similarity",
+                    ]
+                )
+        with open(loss_file_path, "a", encoding="utf-8") as loss_file:
+            writer = csv.writer(loss_file)
+            if len(total_loss_history) > 0:
+                writer.writerow(
+                    [
+                        image_path,
+                        epoch,
+                        total_loss_history[-1],
+                        content_loss_history[-1],
+                        style_loss_history[-1],
+                        similarity,
+                    ]
+                )
+
+    def cartoonize_image(  # pylint: disable=R0915
+        self, image_path: str, verbose: bool = False
+    ) -> Image.Image:
         """Cartoonize an image"""
         content_image = Image.open(image_path)
-        style_cartoon = self.__get_similar_cartoon(image_path)
+        style_cartoon, similarity = self.__get_similar_cartoon(image_path)
 
         if verbose:
             print("Content Image:")
@@ -161,6 +218,10 @@ class PipelineTransferStyle:
 
         optimizer = self.__get_optimizer(generated_image)
 
+        total_loss_history = []
+        content_loss_history = []
+        style_loss_history = []
+
         for epoch in tqdm(range(self.params.epochs)):
 
             def closure():
@@ -173,31 +234,68 @@ class PipelineTransferStyle:
                 )
                 loss = 0
 
+                style_loss_values = 0
+                content_loss_values = 0
+
                 for layer_id, layer_output in output:
 
                     if layer_id in self.params.style_layers:
-                        loss += self.params.weights[layer_id] + self.style_loss(
-                            layer_output, style_targets[layer_id]
-                        )
+                        style_loss_value = self.params.weights[
+                            layer_id
+                        ] * self.style_loss(layer_output, style_targets[layer_id])
+                        loss += style_loss_value
+                        style_loss_values += style_loss_value.item()
+
                     elif layer_id in self.params.content_layers:
-                        loss += self.params.weights[layer_id] + self.content_loss(
-                            layer_output, content_targets[layer_id]
-                        )
+                        content_loss_value = self.params.weights[
+                            layer_id
+                        ] * self.content_loss(layer_output, content_targets[layer_id])
+                        loss += content_loss_value
+
+                        content_loss_values += content_loss_value.item()
                     else:
                         logging.warning(
                             layer_id, layer_output, " not in style or content layers"
                         )
 
+                total_loss_history.append(loss.item())
+                content_loss_history.append(content_loss_values)
+                style_loss_history.append(style_loss_values)
+
                 loss.backward()  # type: ignore
                 return loss
 
-            if epoch % 10 == 0:
-                plt.imshow(postprocess(generated_image.data[0].cpu().squeeze()))
-                plt.show()
+            if epoch % 10 == 0 and verbose and epoch != 0:
+                local_gen = postprocess(generated_image.data[0].cpu().squeeze())
+                self.save_and_plot(
+                    image_path,
+                    local_gen,
+                    epoch,
+                    total_loss_history,
+                    content_loss_history,
+                    style_loss_history,
+                    similarity,
+                )
 
             optimizer.step(closure)
 
+        if verbose:
+
+            self.plot_loss(total_loss_history, f"Total Loss, image {image_path}")
+            print("Total Loss:", total_loss_history[-1])
+            self.plot_loss(content_loss_history, f"Content Loss {image_path}")
+            print("Content Loss:", content_loss_history[-1])
+            self.plot_loss(style_loss_history, f"Style Loss {image_path}")
+            print("Style Loss:", style_loss_history[-1])
+
         return postprocess(generated_image.data[0].cpu().squeeze())
+
+    def plot_loss(self, loss_history: List[float], title: str = ""):
+        """Plot loss"""
+        plt.plot(loss_history)
+        plt.title(title)
+        plt.show()
+        plt.savefig(os.path.join(self.params.save_path, f"{title}.jpg"))
 
 
 if __name__ == "__main__":
@@ -206,6 +304,7 @@ if __name__ == "__main__":
         epochs=1000,
         learning_rate=0.001,
         optimizer="lbfgs",
+        save_path="results/",
     )
 
     pipeline_transfer_style = PipelineTransferStyle(
