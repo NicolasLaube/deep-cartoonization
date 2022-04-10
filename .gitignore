@@ -35,3 +35,4 @@ images/*
 **/password.txt
 scripts/**/*.json
 scripts/server/downloaded_temp
+**.pkl

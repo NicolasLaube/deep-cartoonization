@@ -18,6 +18,8 @@ DOWNLOADED_TEMP_FOLDER = os.path.join(SERVER_SCRIPTS_FOLDER, "downloaded_temp")
 
 ADVERSARIAL_SCORES_PATH = os.path.join(RESULT_SCRIPTS_FOLDER, "adversarial_scores.json")
 
+HISTOGRAMS_PATH = os.path.join(RESULT_SCRIPTS_FOLDER, "histograms.pkl")
+
 
 class DISTANT_PATHS:  # pylint: disable=invalid-name
     """A class for all the distant paths"""
