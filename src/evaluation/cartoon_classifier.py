@@ -169,11 +169,15 @@ class CartoonClassifier:
         """Predict the class of an image"""
         image = Image.open(image_path)
 
+        if image.mode == "RGBA":
+            image = image.convert("RGB")
+
         image = self.preprocess_validation()(image)
         image = image.to(self.device)
 
-        output = self.model(image.unsqueeze(0))
-        _, preds = torch.max(output, 1)
+        with torch.no_grad():
+            output = self.model(image.unsqueeze(0))
+            _, preds = torch.max(output, 1)
         return preds.item()
 
 
