@@ -185,7 +185,7 @@ class CartoonClassifier:
     def evaluate_from_folder(self, folder_path: str):
         """Evaluates from folder"""
         files = os.listdir(folder_path)
-        files = [os.path.join(folder_path, file) for file in files]
+        files = [os.path.join(folder_path, file) for file in files]  # if "_50" in file
 
         true_positif = 0
         false_negatif = 0
@@ -257,5 +257,5 @@ if __name__ == "__main__":
     # )
 
     CARTOON_CLASSIFIER.evaluate_from_folder(
-        "data/results/lr_0.1_epoch_20_optimizer_lbfgs"
+        "data/results/lr_1_epoch_10_optimizer_lbfgs"
     )
