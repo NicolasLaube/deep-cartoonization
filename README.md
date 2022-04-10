@@ -1,20 +1,16 @@
-# CartoonGAN
+# Pixar-Disney Cartoonization
 
-##### Python version
+The goal of this projet was to devleop methods for image cartoonization.
 
 ```python = 3.8```
 
-## Data
+## Installations
 
-Here we explain how to get/extract the required data.
-### Cartoons
-
-Cartoons can be extracted from movies in the
-
-### Pictures
-
+To install dependencies please run `make install`.
 
 ## Demonstrator
+
+To run demonstrator please run `make demonstrator`.
 
 ### Rank cartoons
 
