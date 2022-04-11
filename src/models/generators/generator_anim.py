@@ -11,7 +11,7 @@ from src.models.reusable_blocks.up_down_conv import (
 from src.models.utils.initialization import initialize_weights
 
 
-class Generator(nn.Module):
+class AnimeGenerator(nn.Module):
     """Generator for AnimeGAN."""
 
     def __init__(self):

@@ -14,8 +14,8 @@ from tqdm import tqdm
 
 from src import config
 from src.base.base_trainer import Trainer
-from src.models.discriminators.discriminator_anime import Discriminator
-from src.models.generators.generator_anim import Generator
+from src.models.discriminators.discriminator_anime import AnimeDiscriminator
+from src.models.generators.generator_anim import AnimeGenerator
 from src.models.losses.loss_anime_gan import AnimeGanLoss
 from src.models.utils.parameters import (
     ArchitectureParams,
@@ -37,11 +37,11 @@ class TrainerAnimeGAN(Trainer):
 
     def load_discriminator(self) -> nn.Module:
         """Loads discriminator"""
-        return Discriminator()
+        return AnimeDiscriminator()
 
     def load_generator(self) -> nn.Module:
         """Loads generator"""
-        return Generator()
+        return AnimeGenerator()
 
     def pretrain(
         self,
@@ -55,7 +55,81 @@ class TrainerAnimeGAN(Trainer):
         weights_folder: str = "",
         epochs: int = 10,
     ) -> None:
-        raise NotImplementedError("Pretraining is not implemented for Anime GAN")
+        self._init_optimizers(pretrain_params, epochs)
+
+        self._set_train_mode()
+        self._reset_timer()
+        loss_fn = AnimeGanLoss(device=self.device)
+
+        step = (epoch_start - 1) * len(pictures_loader_train)
+
+        for epoch in range(epoch_start, epochs + epoch_start):
+            for pictures in tqdm(pictures_loader_train):
+
+                pictures = pictures.to(self.device)
+
+                self.gen_optimizer.zero_grad()
+
+                with torch.autocast(self.device):
+
+                    gen_cartoon = self.generator(pictures)
+                    loss = loss_fn.content_loss_vgg(pictures, gen_cartoon)
+
+                    loss.backward()
+                self.gen_optimizer.step()
+
+                callback_args = {
+                    "epoch": epoch,
+                    "step": step,
+                    "losses": {
+                        "pretrain_gen_loss": loss,
+                    },
+                }
+                self._callback(batch_callback, callback_args)
+
+                step += 1
+
+                self._save_weights(
+                    os.path.join(weights_folder, f"pretrained_gen_{epoch}.pkl"),
+                    os.path.join(weights_folder, f"pretrained_disc_{epoch}.pkl"),
+                )
+
+            losses_lists: Dict[str, List[float]] = {
+                "pretrain_gen_loss": [],
+            }
+
+            with torch.no_grad():
+                for pictures in tqdm(
+                    pictures_loader_validation,
+                    total=len(pictures_loader_validation),
+                ):
+
+                    pictures = pictures.to(self.device)
+
+                    with torch.autocast(self.device):
+                        gen_cartoons = self.generator(pictures)
+
+                        loss = loss_fn.content_loss_vgg(pictures, gen_cartoons).detach()
+
+                    losses_lists["pretrain_gen_loss"].append(
+                        loss.cpu().detach().numpy()
+                    )
+
+            mean_losses = {
+                loss_name: np.mean(values)
+                for (loss_name, values) in losses_lists.items()
+            }
+
+            callback_args = {
+                "epoch": epoch,
+                "losses": mean_losses,
+            }
+            self._callback(validation_callback, callback_args)
+
+            self._save_model(
+                os.path.join(weights_folder, f"trained_gen_{epoch}.pkl"),
+                os.path.join(weights_folder, f"trained_disc_{epoch}.pkl"),
+            )
 
     # pylint: disable-msg=too-many-statements
     def train(

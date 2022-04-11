@@ -10,6 +10,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from src.models.generators import FixedGenerator, ModularGenerator, UNet
+from src.models.generators.generator_anim import AnimeGenerator
 from src.models.utils.parameters import Architecture, ArchitectureParams
 
 
@@ -55,6 +56,8 @@ class Predictor(ABC):
 
         if self.architecture == Architecture.GANUNet:
             return UNet(n_channels=10, n_classes=10)  # To change
+        if self.architecture == Architecture.GANAnime:
+            return AnimeGenerator()
 
         raise ImportError("Model architecture doens't exist.")
 
