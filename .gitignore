@@ -36,3 +36,5 @@ images/*
 scripts/**/*.json
 scripts/server/downloaded_temp
 **.pkl
+scripts/results/*
+!scripts/results/.gitkeep

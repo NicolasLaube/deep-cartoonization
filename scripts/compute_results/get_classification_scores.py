@@ -45,7 +45,7 @@ for _, row in df_remote_runs.iterrows():
             for picture_path in tqdm(os.listdir(epoch_pictures_path)):
                 if picture_path.endswith("cartoon.png"):
                     predictions = classifier.predict_from_path(
-                        os.path.join(epoch_pictures_path, picture_path)
+                        os.path.join(epoch_pictures_path, picture_path), return_raw=True
                     )
                     all_predictions[row["run_id"]][epoch].append(
                         [float(x) for x in predictions]
