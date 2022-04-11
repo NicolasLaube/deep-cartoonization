@@ -17,6 +17,7 @@ TO_DOWNLOAD_JSON_PATH = os.path.join(SERVER_SCRIPTS_FOLDER, "to_download.json")
 DOWNLOADED_TEMP_FOLDER = os.path.join(SERVER_SCRIPTS_FOLDER, "downloaded_temp")
 
 ADVERSARIAL_SCORES_PATH = os.path.join(RESULT_SCRIPTS_FOLDER, "adversarial_scores.json")
+CLASSIFIER_SCORES_PATH = os.path.join(RESULT_SCRIPTS_FOLDER, "classifier_scores.json")
 
 HISTOGRAMS_PATH = os.path.join(RESULT_SCRIPTS_FOLDER, "histograms.pkl")
 

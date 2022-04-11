@@ -152,14 +152,20 @@ if __name__ == "__main__":
             ratio_filter_mode=preprocessing.RatioFilterMode.NO_FILTER,
             nb_images=4,
         ),
-        gen_path="weights/pretrained/trained_netG.pth",
+        gen_path="weights/2022_03_28-02_02_38/trained_gen_145.pkl",
     )
     results = cartoonizer.cartoonize_images_from_path(
         [
+            "data/landscapes/00000000_(5).jpg",
+            "data/landscapes/00000002_(6).jpg",
+            "data/landscapes/00000003_(6).jpg",
+            "data/landscapes/00000008_(3).jpg",
+            "data/landscapes/00000039_(4).jpg",
             "data/flickr/Images/3532593368_be10432e92.jpg",
             "data/flickr/Images/3534512991_f9fd66f165.jpg",
         ]
     )
     for result in results:
         plt.imshow(result["cartoon"])
+        plt.axis("off")
         plt.show()
