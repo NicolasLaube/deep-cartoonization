@@ -4,6 +4,18 @@ The goal of this projet was to devleop methods for image cartoonization.
 
 ```python = 3.8```
 
+## Report
+
+You can find the report at this address: `https://drive.google.com/drive/folders/1QZEOePZYLy5r-v1NzK5gERmB5CrUQt3P?usp=sharing`.
+
+## Data
+
+All data is available at `https://drive.google.com/drive/folders/1Ty-eD8pdJNja5iQjBSf8-8xe43IWF0ij?usp=sharing`.
+
+## Weights
+
+Style transfer weights: `https://drive.google.com/drive/folders/1Ty-eD8pdJNja5iQjBSf8-8xe43IWF0ij`.
+
 ## Installations
 
 To install dependencies please run `make install`.
