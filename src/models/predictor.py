@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from nptyping import NDArray
 from torch.utils.data.dataloader import DataLoader
+from torchvision import transforms
 from tqdm import tqdm
 
 from src.models.generators import FixedGenerator, ModularGenerator, UNet
@@ -65,9 +66,11 @@ class Predictor(ABC):
     ) -> List[NDArray[(3, Any, Any), np.int32]]:
         """Cartoonize images"""
         cartoons = []
+        to_pil = transforms.ToPILImage()
         with torch.no_grad():
             self.model.eval()
             for picture in tqdm(pictures):
+                picture = to_pil(np.array(picture).astype(np.uint8))
                 picture = self.transformer.picture_transform(picture)[None]
                 cartoons.append(
                     self.transformer.cartoon_untransform(self.model(picture).squeeze())

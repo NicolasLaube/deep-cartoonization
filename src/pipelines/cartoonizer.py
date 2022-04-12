@@ -3,12 +3,12 @@
 from typing import Any, Dict, List
 
 import numpy as np
+from matplotlib import pyplot as plt
 from nptyping import NDArray
 from PIL import Image
 from torch.utils.data import DataLoader
 
 from src import config, dataset, models, preprocessing
-from src.base.base_trainer import Trainer
 from src.pipelines.utils import init_device
 from src.preprocessing.transformations.transformations import Transform
 
@@ -32,7 +32,6 @@ class Cartoonizer:
         self.architecture_params = architecture_params
         self.pictures_dataset_parameters = pictures_dataset_parameters
         self.gen_path = gen_path
-        self.trainer = self.__init_trainer()
 
     def set_weights(self, gen_path: str) -> None:
         """To set new weights"""
@@ -98,14 +97,22 @@ class Cartoonizer:
             raise Exception("Weights path is not defined")
         predictor.load_weights(gen_path=self.gen_path)
 
-        return predictor.cartoonize(pictures=pictures)
+        return [
+            {"picture": picture, "cartoon": cartoon}
+            for (picture, cartoon) in zip(
+                pictures, predictor.cartoonize(pictures=pictures)
+            )
+        ]
 
     def cartoonize_images_from_path(
         self, paths: List[str]
     ) -> List[Dict[str, NDArray[(3, Any, Any), np.int32]]]:
         """To show some cartoonized images from their path"""
 
-        pictures = [Image.open(path) for path in paths]
+        pictures = []
+        for path in paths:
+            image = Image.open(path).convert("RGB")
+            pictures.append(image)
 
         return self.cartoonize_images(pictures)
 
@@ -133,27 +140,6 @@ class Cartoonizer:
             "train" if train else "validation",
         )
 
-    def __init_trainer(self) -> Trainer:
-        """Initialize trainer"""
-        if self.architecture == models.Architecture.GANFixed:
-            assert isinstance(
-                self.architecture_params, models.ArchitectureParamsNULL
-            ), "Fixed architecture requires null architecture parameters"
-            return models.FixedCartoonGANTrainer(device=self.device)
-        if self.architecture == models.Architecture.GANModular:
-            assert isinstance(
-                self.architecture_params, models.ArchitectureParamsModular
-            ), "Modular architecture requires modular params"
-            return models.ModularGANTrainer(
-                device=self.device, architecture_params=self.architecture_params
-            )
-        if self.architecture == models.Architecture.GANAnime:
-            assert isinstance(
-                self.architecture_params, models.ArchitectureParamsNULL
-            ), "Anime architecture requires null architecture parameters"
-            return models.TrainerAnimeGAN(self.architecture_params, device=self.device)
-        raise NotImplementedError("Pipeline wasn't implemented")
-
 
 if __name__ == "__main__":
     cartoonizer = Cartoonizer(
@@ -166,6 +152,20 @@ if __name__ == "__main__":
             ratio_filter_mode=preprocessing.RatioFilterMode.NO_FILTER,
             nb_images=4,
         ),
-        gen_path="weights/pretrained/trained_netG.pth",
+        gen_path="weights/2022_03_28-02_02_38/trained_gen_145.pkl",
     )
-    cartoonizer.get_cartoonized_images(4)
+    results = cartoonizer.cartoonize_images_from_path(
+        [
+            "data/landscapes/00000000_(5).jpg",
+            "data/landscapes/00000002_(6).jpg",
+            "data/landscapes/00000003_(6).jpg",
+            "data/landscapes/00000008_(3).jpg",
+            "data/landscapes/00000039_(4).jpg",
+            "data/flickr/Images/3532593368_be10432e92.jpg",
+            "data/flickr/Images/3534512991_f9fd66f165.jpg",
+        ]
+    )
+    for result in results:
+        plt.imshow(result["cartoon"])
+        plt.axis("off")
+        plt.show()

@@ -1,0 +1,2 @@
+from src.models.discriminators.discriminator_fixed import FixedDiscriminator
+from src.models.discriminators.discriminator_modular import ModularDiscriminator

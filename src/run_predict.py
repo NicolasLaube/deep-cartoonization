@@ -4,8 +4,9 @@ import argparse
 import os
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
-from src import dataset, models, preprocessing
+from src import config, dataset, models, preprocessing
 from src.pipelines.pipeline import Cartoonizer
 
 if __name__ == "__main__":
@@ -119,9 +120,14 @@ if __name__ == "__main__":
     ######################################
     ### Finally we can train the model ###
     ######################################
-    cartoonized_images = cartoonizer.get_cartoonized_images()
+    df_pictures_val = pd.read_csv(config.PICTURES_VALIDATION_CSV)
+    paths = df_pictures_val.head(NB_IMAGES)["path"].to_list()
+    cartoonized_images = cartoonizer.cartoonize_images_from_path(paths)
 
-    os.mkdir(args.save_path)
+    try:
+        os.mkdir(args.save_path)
+    except:  # pylint: disable=bare-except
+        pass
 
     WEIGHT = 8
     HEIGHT = 8
@@ -129,7 +135,9 @@ if __name__ == "__main__":
     for i, cartoonized_image in enumerate(cartoonized_images):
         picture = cartoonized_image["picture"]
         cartoon = cartoonized_image["cartoon"]
+        plt.axis("off")
         plt.imshow(picture)
         plt.savefig(os.path.join(args.save_path, f"image_{i}_picture.png"))
+        plt.axis("off")
         plt.imshow(cartoon)
         plt.savefig(os.path.join(args.save_path, f"image_{i}_cartoon.png"))

@@ -239,6 +239,7 @@ class Pipeline:
             architecture=self.architecture,
             new_size=self.cartoons_dataset_parameters.new_size,
             crop_mode=self.cartoons_dataset_parameters.crop_mode,
+            smoothing_kernel_size=self.cartoons_dataset_parameters.smoothing_kernel_size,
         )
         is_anime = self.architecture == models.Architecture.GANAnime
 
@@ -262,6 +263,7 @@ class Pipeline:
             new_size=self.pictures_dataset_parameters.new_size,
             crop_mode=self.pictures_dataset_parameters.crop_mode,
             architecture=self.architecture,
+            smoothing_kernel_size=self.pictures_dataset_parameters.smoothing_kernel_size,
         )
 
         return dataset.PicturesDataset(
@@ -557,12 +559,14 @@ if __name__ == "__main__":
             new_size=(256, 256),
             crop_mode=preprocessing.CropMode.CROP_CENTER,
             nb_images=4,
+            smoothing_kernel_size=5,
         ),
         pictures_dataset_parameters=dataset.PicturesDatasetParameters(
             new_size=(256, 256),
             crop_mode=preprocessing.CropMode.CROP_CENTER,
             ratio_filter_mode=preprocessing.RatioFilterMode.NO_FILTER,
             nb_images=4,
+            smoothing_kernel_size=5,
         ),
         init_models_paths=None,
         training_parameters=models.TrainingParams(batch_size=2),

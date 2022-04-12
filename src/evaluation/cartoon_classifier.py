@@ -166,7 +166,7 @@ class CartoonClassifier:
         """Save the model"""
         torch.save(self.model, model_path)
 
-    def predict_from_path(self, image_path: str):
+    def predict_from_path(self, image_path: str, return_raw: bool = False):
         """Predict the class of an image"""
         if ".npy" in image_path:
             image = np.load(image_path)
@@ -183,8 +183,10 @@ class CartoonClassifier:
 
         with torch.no_grad():
             output = self.model(image.unsqueeze(0))
+            if return_raw:
+                return output.cpu().numpy()[0]
             _, preds = torch.max(output, 1)
-        return preds.item()
+            return preds.item()
 
     def evaluate_from_folder(self, folder_path: str):
         """Evaluates from folder"""

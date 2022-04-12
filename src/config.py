@@ -23,7 +23,7 @@ class Movie(Enum):
 ### About folders ###
 #####################
 
-ROOT_FOLDER = "."
+ROOT_FOLDER = "./"
 
 DATA_FOLDER = os.path.join(ROOT_FOLDER, "data")
 
@@ -52,6 +52,8 @@ LOGS_FOLDER = os.path.join(ROOT_FOLDER, "logs")
 TENSORBOARD_FOLDER = os.path.join(LOGS_FOLDER, "tensorboard")
 ALL_PARAMS_CSV = os.path.join(LOGS_FOLDER, "all_params.csv")
 ALL_PARAMS_EXAMPLE_CSV = os.path.join(LOGS_FOLDER, "all_params_example.csv")
+REMOTE_PARAMS_PATH = os.path.join("logs", "all_params_remote.csv")
+
 ####################
 ### About movies ###
 ####################
