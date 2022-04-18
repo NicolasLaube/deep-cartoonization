@@ -2,7 +2,7 @@
 
 The goal of this projet was to devleop methods for image cartoonization.
 
-```python = 3.8```
+`python = 3.8`
 
 ## Installations
 

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from src import config, dataset, models, preprocessing
-from src.pipelines.pipeline import Cartoonizer
+from src.pipelines.pipeline_gan import Cartoonizer
 
 if __name__ == "__main__":
 
